@@ -1,0 +1,13 @@
+package com.stockpro.stockpro.repository.administration;
+
+import com.stockpro.stockpro.entity.administration.Role;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface RoleRepository extends JpaRepository<Role, String> {
+    Optional<Role> findByCodeRole(String codeRole);
+    org.springframework.data.domain.Page<Role> findByLibelleContainingIgnoreCaseOrCodeRoleContainingIgnoreCase(String libelle, String codeRole, org.springframework.data.domain.Pageable pageable);
+}
