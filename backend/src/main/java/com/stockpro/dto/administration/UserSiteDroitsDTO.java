@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,14 +13,14 @@ import java.time.LocalDate;
 @Builder
 public class UserSiteDroitsDTO {
 
-    private String idUserSiteDroit;
+    private UUID idUserSiteDroit;
 
     @NotBlank(message = "L'idUtilSite est obligatoire")
-    private String idUtilSite;
+    private UUID idUtilSite;
 
-    private String idRl;
-    private String idPr;
-    private String idGr;
+    private UUID idRl;
+    private UUID idPr;
+    private UUID idGr;
 
     private LocalDate dateAffectation;
 }

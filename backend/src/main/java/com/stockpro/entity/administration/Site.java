@@ -19,7 +19,7 @@ public class Site {
 
     @Id
     @Column(name = "ID_SITE", length = 32, nullable = false, updatable = false)
-    private String idSite;
+    private UUID idSite;
 
     @Column(name = "COD_SITE", length = 30, unique = true)
     private String codeSite;
@@ -52,7 +52,7 @@ public class Site {
     @PrePersist
     public void prePersist() {
         if (this.idSite == null) {
-            this.idSite = UUID.randomUUID().toString().replace("-", "");
+            this.idSite = UUID.randomUUID();
         }
     }
 }

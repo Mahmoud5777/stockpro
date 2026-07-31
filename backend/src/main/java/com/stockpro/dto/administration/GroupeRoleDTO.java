@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,13 +13,13 @@ import java.time.LocalDate;
 @Builder
 public class GroupeRoleDTO {
 
-    private String idGroupeRole;
+    private UUID idGroupeRole;
 
     @NotBlank(message = "L'idRl est obligatoire")
-    private String idRl;
+    private UUID idRl;
 
     @NotBlank(message = "L'idGr est obligatoire")
-    private String idGr;
+    private UUID idGr;
 
     private Boolean actif;
     private LocalDate dateCreation;

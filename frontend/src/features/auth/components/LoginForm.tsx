@@ -28,7 +28,7 @@ export function LoginForm() {
       <Input
         label="Mot de passe"
         type="password"
-        placeholder="••••••••"
+        placeholder="ChangeMoi@2026"
         leftIcon={<FiLock size={16} />}
         error={errors.motPasse?.message}
         {...register("motPasse")}

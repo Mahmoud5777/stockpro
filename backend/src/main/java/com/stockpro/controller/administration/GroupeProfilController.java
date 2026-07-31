@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,20 +38,20 @@ public class GroupeProfilController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<GroupeProfilDTO> getById(@PathVariable String id) {
+    public ResponseEntity<GroupeProfilDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(groupeProfilService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/groupe/{idGr}")
-    public ResponseEntity<List<GroupeProfilDTO>> getByGroupe(@PathVariable String idGr) {
+    public ResponseEntity<List<GroupeProfilDTO>> getByGroupe(@PathVariable UUID idGr) {
         List<GroupeProfilDTO> result = groupeProfilService.findByGroupe(idGr).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/profil/{idPr}")
-    public ResponseEntity<List<GroupeProfilDTO>> getByProfil(@PathVariable String idPr) {
+    public ResponseEntity<List<GroupeProfilDTO>> getByProfil(@PathVariable UUID idPr) {
         List<GroupeProfilDTO> result = groupeProfilService.findByProfil(idPr).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -64,14 +65,14 @@ public class GroupeProfilController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<GroupeProfilDTO> update(@PathVariable String id, @Valid @RequestBody GroupeProfilDTO dto) {
+    public ResponseEntity<GroupeProfilDTO> update(@PathVariable UUID id, @Valid @RequestBody GroupeProfilDTO dto) {
         GroupeProfil updated = groupeProfilService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         groupeProfilService.delete(id);
         return ResponseEntity.noContent().build();
     }

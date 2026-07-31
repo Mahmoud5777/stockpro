@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class SiteDTO {
 
-    private String idSite;
+    private UUID idSite;
 
     @NotBlank(message = "Le code site est obligatoire")
     @Size(max = 30)
@@ -25,5 +27,5 @@ public class SiteDTO {
 
     private String address;
 
-    private String idSiteParent;
+    private UUID idSiteParent;
 }

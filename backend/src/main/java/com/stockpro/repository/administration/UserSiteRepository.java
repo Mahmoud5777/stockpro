@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface UserSiteRepository extends JpaRepository<UserSite, String> {
-    List<UserSite> findByUser_IdUtil(String idUtil);
-    List<UserSite> findBySite_IdSite(String idSite);
+    List<UserSite> findByUser_IdUtil(UUID idUtil);
+    List<UserSite> findBySite_IdSite(UUID idSite);
 }

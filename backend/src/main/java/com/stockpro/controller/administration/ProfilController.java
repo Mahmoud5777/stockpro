@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,7 +57,7 @@ public class ProfilController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<ProfilDTO> getById(@PathVariable String id) {
+    public ResponseEntity<ProfilDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(profilService.findById(id)));
     }
 
@@ -69,14 +70,14 @@ public class ProfilController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<ProfilDTO> update(@PathVariable String id, @Valid @RequestBody ProfilDTO dto) {
+    public ResponseEntity<ProfilDTO> update(@PathVariable UUID id, @Valid @RequestBody ProfilDTO dto) {
         Profil updated = profilService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'SUPPRESSION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         profilService.delete(id);
         return ResponseEntity.noContent().build();
     }

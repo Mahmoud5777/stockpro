@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public User findById(String id) {
+    public User findById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
@@ -69,7 +70,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User update(String id, User user) {
+    public User update(UUID id, User user) {
         User existing = findById(id);
         existing.setNomComplet(user.getNomComplet());
         existing.setLogin(user.getLogin());
@@ -83,13 +84,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         User existing = findById(id);
         userRepository.delete(existing);
     }
 
     @Override
-    public User changeCredentials(String idUtil, String currentPassword, String newLogin, String newPassword) {
+    public User changeCredentials(UUID idUtil, String currentPassword, String newLogin, String newPassword) {
         User existing = findById(idUtil);
 
         if (!passwordEncoder.matches(currentPassword, existing.getMotPasse())) {

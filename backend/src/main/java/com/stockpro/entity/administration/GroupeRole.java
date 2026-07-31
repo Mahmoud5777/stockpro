@@ -17,7 +17,7 @@ public class GroupeRole {
 
     @Id
     @Column(name = "ID_GROUPE_ROLE", length = 32, nullable = false, updatable = false)
-    private String idGroupeRole;
+    private UUID idGroupeRole;
 
     // Relation "AppartientGroupe"
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,7 +38,7 @@ public class GroupeRole {
     @PrePersist
     public void prePersist() {
         if (this.idGroupeRole == null) {
-            this.idGroupeRole = UUID.randomUUID().toString().replace("-", "");
+            this.idGroupeRole = UUID.randomUUID();
         }
         if (this.dateCreation == null) {
             this.dateCreation = LocalDate.now();

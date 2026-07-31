@@ -16,7 +16,7 @@ public class UserSiteDroits {
 
     @Id
     @Column(name = "ID_USER_SITE_DROIT", length = 32, nullable = false, updatable = false)
-    private String idUserSiteDroit;
+    private UUID idUserSiteDroit;
 
     // Relation "AffecteRole" (optionnelle)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,7 +44,7 @@ public class UserSiteDroits {
     @PrePersist
     public void prePersist() {
         if (this.idUserSiteDroit == null) {
-            this.idUserSiteDroit = UUID.randomUUID().toString().replace("-", "");
+            this.idUserSiteDroit = UUID.randomUUID();
         }
         if (this.dateAffectation == null) {
             this.dateAffectation = LocalDate.now();

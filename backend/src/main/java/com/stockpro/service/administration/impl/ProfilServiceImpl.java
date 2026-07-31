@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +41,8 @@ public class ProfilServiceImpl implements ProfilService {
 
     @Override
     @Transactional(readOnly = true)
-    public Profil findById(String id) {
-        return profilRepository.findById(id)
+    public Profil findById(UUID id) {
+        return profilRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Profil", id));
     }
 
@@ -52,7 +53,7 @@ public class ProfilServiceImpl implements ProfilService {
     }
 
     @Override
-    public Profil update(String id, Profil profil) {
+    public Profil update(UUID id, Profil profil) {
         Profil existing = findById(id);
         existing.setCodeProfil(profil.getCodeProfil());
         existing.setLibelle(profil.getLibelle());
@@ -61,7 +62,7 @@ public class ProfilServiceImpl implements ProfilService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         Profil existing = findById(id);
         profilRepository.delete(existing);
     }

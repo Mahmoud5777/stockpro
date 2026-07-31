@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,20 +38,20 @@ public class GroupeRoleController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<GroupeRoleDTO> getById(@PathVariable String id) {
+    public ResponseEntity<GroupeRoleDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(groupeRoleService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/groupe/{idGr}")
-    public ResponseEntity<List<GroupeRoleDTO>> getByGroupe(@PathVariable String idGr) {
+    public ResponseEntity<List<GroupeRoleDTO>> getByGroupe(@PathVariable UUID idGr) {
         List<GroupeRoleDTO> result = groupeRoleService.findByGroupe(idGr).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/role/{idRl}")
-    public ResponseEntity<List<GroupeRoleDTO>> getByRole(@PathVariable String idRl) {
+    public ResponseEntity<List<GroupeRoleDTO>> getByRole(@PathVariable UUID idRl) {
         List<GroupeRoleDTO> result = groupeRoleService.findByRole(idRl).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -64,14 +65,14 @@ public class GroupeRoleController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<GroupeRoleDTO> update(@PathVariable String id, @Valid @RequestBody GroupeRoleDTO dto) {
+    public ResponseEntity<GroupeRoleDTO> update(@PathVariable UUID id, @Valid @RequestBody GroupeRoleDTO dto) {
         GroupeRole updated = groupeRoleService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         groupeRoleService.delete(id);
         return ResponseEntity.noContent().build();
     }

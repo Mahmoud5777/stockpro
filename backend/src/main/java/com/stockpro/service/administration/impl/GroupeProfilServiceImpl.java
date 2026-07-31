@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,20 +41,20 @@ public class GroupeProfilServiceImpl implements GroupeProfilService {
 
     @Override
     @Transactional(readOnly = true)
-    public GroupeProfil findById(String id) {
-        return groupeProfilRepository.findById(id)
+    public GroupeProfil findById(UUID id) {
+        return groupeProfilRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("GroupeProfil", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupeProfil> findByGroupe(String idGr) {
+    public List<GroupeProfil> findByGroupe(UUID idGr) {
         return groupeProfilRepository.findByGroupe_IdGr(idGr);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupeProfil> findByProfil(String idPr) {
+    public List<GroupeProfil> findByProfil(UUID idPr) {
         return groupeProfilRepository.findByProfil_IdPr(idPr);
     }
 
@@ -65,7 +66,7 @@ public class GroupeProfilServiceImpl implements GroupeProfilService {
     }
 
     @Override
-    public GroupeProfil update(String id, GroupeProfil groupeProfil) {
+    public GroupeProfil update(UUID id, GroupeProfil groupeProfil) {
         GroupeProfil existing = findById(id);
         existing.setActif(groupeProfil.getActif());
         existing.setDateCreation(groupeProfil.getDateCreation());
@@ -76,7 +77,7 @@ public class GroupeProfilServiceImpl implements GroupeProfilService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         GroupeProfil existing = findById(id);
         groupeProfilRepository.delete(existing);
     }
@@ -85,14 +86,14 @@ public class GroupeProfilServiceImpl implements GroupeProfilService {
         if (groupeProfil.getGroupe() == null || groupeProfil.getGroupe().getIdGr() == null) {
             throw new IllegalArgumentException("Le groupe (idGr) est obligatoire");
         }
-        Groupe groupe = groupeRepository.findById(groupeProfil.getGroupe().getIdGr())
+        Groupe groupe = groupeRepository.findById(groupeProfil.getGroupe().getIdGr().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Groupe", groupeProfil.getGroupe().getIdGr()));
         groupeProfil.setGroupe(groupe);
 
         if (groupeProfil.getProfil() == null || groupeProfil.getProfil().getIdPr() == null) {
             throw new IllegalArgumentException("Le profil (idPr) est obligatoire");
         }
-        Profil profil = profilRepository.findById(groupeProfil.getProfil().getIdPr())
+        Profil profil = profilRepository.findById(groupeProfil.getProfil().getIdPr().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Profil", groupeProfil.getProfil().getIdPr()));
         groupeProfil.setProfil(profil);
     }

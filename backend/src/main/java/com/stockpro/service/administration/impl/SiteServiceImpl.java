@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +41,7 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Site findById(String id) {
+    public Site findById(UUID id) {
         return siteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Site", id));
     }
@@ -53,7 +54,7 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Site> findEnfants(String idSiteParent) {
+    public List<Site> findEnfants(UUID idSiteParent) {
         return siteRepository.findBySiteParent_IdSite(idSiteParent);
     }
 
@@ -65,7 +66,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    public Site update(String id, Site site) {
+    public Site update(UUID id, Site site) {
         Site existing = findById(id);
         existing.setCodeSite(site.getCodeSite());
         existing.setNomSite(site.getNomSite());
@@ -77,7 +78,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         Site existing = findById(id);
         siteRepository.delete(existing);
     }

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,13 +38,13 @@ public class UserSiteDroitsController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<UserSiteDroitsDTO> getById(@PathVariable String id) {
+    public ResponseEntity<UserSiteDroitsDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(userSiteDroitsService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/user-site/{idUtilSite}")
-    public ResponseEntity<List<UserSiteDroitsDTO>> getByUserSite(@PathVariable String idUtilSite) {
+    public ResponseEntity<List<UserSiteDroitsDTO>> getByUserSite(@PathVariable UUID idUtilSite) {
         List<UserSiteDroitsDTO> result = userSiteDroitsService.findByUserSite(idUtilSite)
                 .stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
@@ -58,14 +59,14 @@ public class UserSiteDroitsController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<UserSiteDroitsDTO> update(@PathVariable String id, @Valid @RequestBody UserSiteDroitsDTO dto) {
+    public ResponseEntity<UserSiteDroitsDTO> update(@PathVariable UUID id, @Valid @RequestBody UserSiteDroitsDTO dto) {
         UserSiteDroits updated = userSiteDroitsService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userSiteDroitsService.delete(id);
         return ResponseEntity.noContent().build();
     }

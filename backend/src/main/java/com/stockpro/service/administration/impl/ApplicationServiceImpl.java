@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +41,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Application findById(String id) {
-        return applicationRepository.findById(id)
+    public Application findById(UUID id) {
+        return applicationRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Application", id));
     }
 
@@ -52,7 +53,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public Application update(String id, Application application) {
+    public Application update(UUID id, Application application) {
         Application existing = findById(id);
         existing.setCodeApp(application.getCodeApp());
         existing.setNomApp(application.getNomApp());
@@ -62,7 +63,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         Application existing = findById(id);
         applicationRepository.delete(existing);
     }

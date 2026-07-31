@@ -19,7 +19,7 @@ public class Role {
 
     @Id
     @Column(name = "ID_RL", length = 32, nullable = false, updatable = false)
-    private String idRl;
+    private UUID idRl;
 
     @Column(name = "COD_ROLE", length = 30, unique = true)
     private String codeRole;
@@ -45,7 +45,7 @@ public class Role {
     @PrePersist
     public void prePersist() {
         if (this.idRl == null) {
-            this.idRl = UUID.randomUUID().toString().replace("-", "");
+            this.idRl = UUID.randomUUID();
         }
     }
 }

@@ -4,6 +4,8 @@ import com.stockpro.dto.administration.UserDTO;
 import com.stockpro.entity.administration.User;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class UserMapper {
 
@@ -24,7 +26,7 @@ public class UserMapper {
     public User toEntity(UserDTO dto) {
         if (dto == null) return null;
         return User.builder()
-                .idUtil(dto.getIdUtil())
+                .idUtil(UUID.fromString(dto.getIdUtil().toString().replace("-", " ")))
                 .nomComplet(dto.getNomComplet())
                 .login(dto.getLogin())
                 .motPasse(dto.getMotPasse())

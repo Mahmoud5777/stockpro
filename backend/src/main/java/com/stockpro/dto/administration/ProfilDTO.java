@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class ProfilDTO {
 
-    private String idPr;
+    private UUID idPr;
 
     @NotBlank(message = "Le code profil est obligatoire")
     @Size(max = 30)

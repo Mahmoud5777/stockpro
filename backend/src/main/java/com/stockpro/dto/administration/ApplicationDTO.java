@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class ApplicationDTO {
 
-    private String idApp;
+    private UUID idApp;
 
     @NotBlank(message = "Le code application est obligatoire")
     @Size(max = 30, message = "Le code application ne doit pas dépasser 30 caractères")

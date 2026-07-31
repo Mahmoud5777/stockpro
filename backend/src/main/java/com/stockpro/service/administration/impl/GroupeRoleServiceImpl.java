@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,20 +41,20 @@ public class GroupeRoleServiceImpl implements GroupeRoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public GroupeRole findById(String id) {
-        return groupeRoleRepository.findById(id)
+    public GroupeRole findById(UUID id) {
+        return groupeRoleRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("GroupeRole", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupeRole> findByGroupe(String idGr) {
+    public List<GroupeRole> findByGroupe(UUID idGr) {
         return groupeRoleRepository.findByGroupe_IdGr(idGr);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupeRole> findByRole(String idRl) {
+    public List<GroupeRole> findByRole(UUID idRl) {
         return groupeRoleRepository.findByRole_IdRl(idRl);
     }
 
@@ -65,7 +66,7 @@ public class GroupeRoleServiceImpl implements GroupeRoleService {
     }
 
     @Override
-    public GroupeRole update(String id, GroupeRole groupeRole) {
+    public GroupeRole update(UUID id, GroupeRole groupeRole) {
         GroupeRole existing = findById(id);
         existing.setActif(groupeRole.getActif());
         existing.setDateCreation(groupeRole.getDateCreation());
@@ -76,7 +77,7 @@ public class GroupeRoleServiceImpl implements GroupeRoleService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         GroupeRole existing = findById(id);
         groupeRoleRepository.delete(existing);
     }
@@ -85,14 +86,14 @@ public class GroupeRoleServiceImpl implements GroupeRoleService {
         if (groupeRole.getGroupe() == null || groupeRole.getGroupe().getIdGr() == null) {
             throw new IllegalArgumentException("Le groupe (idGr) est obligatoire");
         }
-        Groupe groupe = groupeRepository.findById(groupeRole.getGroupe().getIdGr())
+        Groupe groupe = groupeRepository.findById(groupeRole.getGroupe().getIdGr().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Groupe", groupeRole.getGroupe().getIdGr()));
         groupeRole.setGroupe(groupe);
 
         if (groupeRole.getRole() == null || groupeRole.getRole().getIdRl() == null) {
             throw new IllegalArgumentException("Le role (idRl) est obligatoire");
         }
-        Role role = roleRepository.findById(groupeRole.getRole().getIdRl())
+        Role role = roleRepository.findById(groupeRole.getRole().getIdRl().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Role", groupeRole.getRole().getIdRl()));
         groupeRole.setRole(role);
     }

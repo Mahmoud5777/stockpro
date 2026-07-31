@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,7 +16,7 @@ import java.time.LocalDate;
 @Builder
 public class UserDTO {
 
-    private String idUtil;
+    private UUID idUtil;
 
     @NotBlank(message = "Le nom complet est obligatoire")
     @Size(max = 150)

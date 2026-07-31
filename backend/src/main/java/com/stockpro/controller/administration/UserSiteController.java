@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,20 +38,20 @@ public class UserSiteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<UserSiteDTO> getById(@PathVariable String id) {
+    public ResponseEntity<UserSiteDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(userSiteService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/user/{idUtil}")
-    public ResponseEntity<List<UserSiteDTO>> getByUser(@PathVariable String idUtil) {
+    public ResponseEntity<List<UserSiteDTO>> getByUser(@PathVariable UUID idUtil) {
         List<UserSiteDTO> result = userSiteService.findByUser(idUtil).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/site/{idSite}")
-    public ResponseEntity<List<UserSiteDTO>> getBySite(@PathVariable String idSite) {
+    public ResponseEntity<List<UserSiteDTO>> getBySite(@PathVariable UUID idSite) {
         List<UserSiteDTO> result = userSiteService.findBySite(idSite).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -64,14 +65,14 @@ public class UserSiteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<UserSiteDTO> update(@PathVariable String id, @Valid @RequestBody UserSiteDTO dto) {
+    public ResponseEntity<UserSiteDTO> update(@PathVariable UUID id, @Valid @RequestBody UserSiteDTO dto) {
         UserSite updated = userSiteService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userSiteService.delete(id);
         return ResponseEntity.noContent().build();
     }

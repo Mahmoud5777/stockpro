@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,7 +48,7 @@ public class FonctionnaliteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<FonctionnaliteDTO> getById(@PathVariable String id) {
+    public ResponseEntity<FonctionnaliteDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(fonctionnaliteService.findById(id)));
     }
 
@@ -61,7 +62,7 @@ public class FonctionnaliteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping("/application/{idApp}")
-    public ResponseEntity<List<FonctionnaliteDTO>> getByApplication(@PathVariable String idApp) {
+    public ResponseEntity<List<FonctionnaliteDTO>> getByApplication(@PathVariable UUID idApp) {
         List<FonctionnaliteDTO> result = fonctionnaliteService.findByApplication(idApp)
                 .stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
@@ -84,14 +85,14 @@ public class FonctionnaliteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<FonctionnaliteDTO> update(@PathVariable String id, @Valid @RequestBody FonctionnaliteDTO dto) {
+    public ResponseEntity<FonctionnaliteDTO> update(@PathVariable UUID id, @Valid @RequestBody FonctionnaliteDTO dto) {
         Fonctionnalite updated = fonctionnaliteService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'SUPPRESSION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         fonctionnaliteService.delete(id);
         return ResponseEntity.noContent().build();
     }

@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,7 +57,7 @@ public class RoleController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_ROLES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<RoleDTO> getById(@PathVariable String id) {
+    public ResponseEntity<RoleDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(roleService.findById(id)));
     }
 
@@ -69,14 +70,14 @@ public class RoleController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_ROLES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<RoleDTO> update(@PathVariable String id, @Valid @RequestBody RoleDTO dto) {
+    public ResponseEntity<RoleDTO> update(@PathVariable UUID id, @Valid @RequestBody RoleDTO dto) {
         Role updated = roleService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_ROLES', 'SUPPRESSION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         roleService.delete(id);
         return ResponseEntity.noContent().build();
     }

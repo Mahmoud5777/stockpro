@@ -2,13 +2,15 @@ package com.stockpro.dto.auth;
 
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class FonctionnaliteAvecDroitsDTO {
-    private String idFonctionnalite;
+    private UUID idFonctionnalite;
     private String codFonctionnalite;
     private String libFonctionnalite;
     private String description;
@@ -16,7 +18,7 @@ public class FonctionnaliteAvecDroitsDTO {
     private String icone;
     private Integer orderAffichage;
     private boolean actif;
-    private String idApplication;
-    private String parentIdFonctionnalite;
+    private UUID idApplication;
+    private UUID parentIdFonctionnalite;
     private DroitsDTO droits;
 }

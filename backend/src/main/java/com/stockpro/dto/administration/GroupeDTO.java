@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class GroupeDTO {
 
-    private String idGr;
+    private UUID idGr;
 
     @NotBlank(message = "Le code groupe est obligatoire")
     @Size(max = 30)

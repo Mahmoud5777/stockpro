@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,20 +41,20 @@ public class ProfilDroitServiceImpl implements ProfilDroitService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProfilDroit findById(String id) {
-        return profilDroitRepository.findById(id)
+    public ProfilDroit findById(UUID id) {
+        return profilDroitRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("ProfilDroit", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProfilDroit> findByProfil(String idPr) {
+    public List<ProfilDroit> findByProfil(UUID idPr) {
         return profilDroitRepository.findByProfil_IdPr(idPr);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProfilDroit> findByFonctionnalite(String idFonc) {
+    public List<ProfilDroit> findByFonctionnalite(UUID idFonc) {
         return profilDroitRepository.findByFonctionnalite_IdFonc(idFonc);
     }
 
@@ -65,7 +66,7 @@ public class ProfilDroitServiceImpl implements ProfilDroitService {
     }
 
     @Override
-    public ProfilDroit update(String id, ProfilDroit profilDroit) {
+    public ProfilDroit update(UUID id, ProfilDroit profilDroit) {
         ProfilDroit existing = findById(id);
         existing.setConsultation(profilDroit.getConsultation());
         existing.setAjout(profilDroit.getAjout());
@@ -80,7 +81,7 @@ public class ProfilDroitServiceImpl implements ProfilDroitService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         ProfilDroit existing = findById(id);
         profilDroitRepository.delete(existing);
     }
@@ -89,14 +90,14 @@ public class ProfilDroitServiceImpl implements ProfilDroitService {
         if (profilDroit.getProfil() == null || profilDroit.getProfil().getIdPr() == null) {
             throw new IllegalArgumentException("Le profil (idPr) est obligatoire");
         }
-        Profil profil = profilRepository.findById(profilDroit.getProfil().getIdPr())
+        Profil profil = profilRepository.findById(profilDroit.getProfil().getIdPr().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Profil", profilDroit.getProfil().getIdPr()));
         profilDroit.setProfil(profil);
 
         if (profilDroit.getFonctionnalite() == null || profilDroit.getFonctionnalite().getIdFonc() == null) {
             throw new IllegalArgumentException("La fonctionnalite (idFonc) est obligatoire");
         }
-        Fonctionnalite fonctionnalite = fonctionnaliteRepository.findById(profilDroit.getFonctionnalite().getIdFonc())
+        Fonctionnalite fonctionnalite = fonctionnaliteRepository.findById(profilDroit.getFonctionnalite().getIdFonc().toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Fonctionnalite", profilDroit.getFonctionnalite().getIdFonc()));
         profilDroit.setFonctionnalite(fonctionnalite);
     }

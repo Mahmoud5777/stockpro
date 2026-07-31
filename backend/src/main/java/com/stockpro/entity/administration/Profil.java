@@ -19,7 +19,7 @@ public class Profil {
 
     @Id
     @Column(name = "ID_PR", length = 32, nullable = false, updatable = false)
-    private String idPr;
+    private UUID idPr;
 
     @Column(name = "COD_PROFIL", length = 30, nullable = false, unique = true)
     private String codeProfil;
@@ -51,7 +51,7 @@ public class Profil {
     @PrePersist
     public void prePersist() {
         if (this.idPr == null) {
-            this.idPr = UUID.randomUUID().toString().replace("-", "");
+            this.idPr = UUID.randomUUID();
         }
     }
 }

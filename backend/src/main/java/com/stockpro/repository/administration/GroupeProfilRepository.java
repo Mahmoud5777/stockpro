@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface GroupeProfilRepository extends JpaRepository<GroupeProfil, String> {
-    List<GroupeProfil> findByGroupe_IdGr(String idGr);
-    List<GroupeProfil> findByProfil_IdPr(String idPr);
+    List<GroupeProfil> findByGroupe_IdGr(UUID idGr);
+    List<GroupeProfil> findByProfil_IdPr(UUID idPr);
 }

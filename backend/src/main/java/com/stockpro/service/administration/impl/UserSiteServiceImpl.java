@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,20 +41,20 @@ public class UserSiteServiceImpl implements UserSiteService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserSite findById(String id) {
-        return userSiteRepository.findById(id)
+    public UserSite findById(UUID id) {
+        return userSiteRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("UserSite", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSite> findByUser(String idUtil) {
+    public List<UserSite> findByUser(UUID idUtil) {
         return userSiteRepository.findByUser_IdUtil(idUtil);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSite> findBySite(String idSite) {
+    public List<UserSite> findBySite(UUID idSite) {
         return userSiteRepository.findBySite_IdSite(idSite);
     }
 
@@ -65,7 +66,7 @@ public class UserSiteServiceImpl implements UserSiteService {
     }
 
     @Override
-    public UserSite update(String id, UserSite userSite) {
+    public UserSite update(UUID id, UserSite userSite) {
         UserSite existing = findById(id);
         existing.setDateAffectation(userSite.getDateAffectation());
         resolveRelations(userSite);
@@ -75,7 +76,7 @@ public class UserSiteServiceImpl implements UserSiteService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         UserSite existing = findById(id);
         userSiteRepository.delete(existing);
     }
@@ -84,7 +85,7 @@ public class UserSiteServiceImpl implements UserSiteService {
         if (userSite.getUser() == null || userSite.getUser().getIdUtil() == null) {
             throw new IllegalArgumentException("L'utilisateur (idUtil) est obligatoire");
         }
-        User user = userRepository.findById(userSite.getUser().getIdUtil())
+        User user = userRepository.findById(userSite.getIdUtilSite())
                 .orElseThrow(() -> new ResourceNotFoundException("User", userSite.getUser().getIdUtil()));
         userSite.setUser(user);
 

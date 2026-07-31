@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +41,8 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Role findById(String id) {
-        return roleRepository.findById(id)
+    public Role findById(UUID id) {
+        return roleRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Role", id));
     }
 
@@ -52,7 +53,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public Role update(String id, Role role) {
+    public Role update(UUID id, Role role) {
         Role existing = findById(id);
         existing.setCodeRole(role.getCodeRole());
         existing.setLibelle(role.getLibelle());
@@ -61,7 +62,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         Role existing = findById(id);
         roleRepository.delete(existing);
     }

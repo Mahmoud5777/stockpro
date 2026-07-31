@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,8 +24,8 @@ public class AuditServiceImpl implements AuditService {
     // englobante échoue (ex: on veut garder la trace d'un login raté).
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void log(AuditAction action, String login, String idUtil, HttpServletRequest request,
-                     Integer statutHttp, String details) {
+    public void log(AuditAction action, String login, UUID idUtil, HttpServletRequest request,
+                    Integer statutHttp, String details) {
         try {
             LogAcces entry = LogAcces.builder()
                     .action(action)

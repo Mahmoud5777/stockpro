@@ -3,6 +3,7 @@ package com.stockpro.dto.auth;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -10,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MeResponseDTO {
-    private String idUtil;
+    private UUID idUtil;
     private String nomComplet;
     private String login;
     private String email;

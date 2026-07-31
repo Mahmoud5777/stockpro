@@ -17,7 +17,7 @@ public class RefreshToken {
 
     @Id
     @Column(name = "ID_REFRESH_TOKEN", length = 32, nullable = false, updatable = false)
-    private String idRefreshToken;
+    private UUID idRefreshToken;
 
     // Token opaque (UUID aléatoire), pas un JWT : permet la révocation côté serveur
     @Column(name = "TOKEN", length = 255, nullable = false, unique = true)
@@ -40,7 +40,7 @@ public class RefreshToken {
     @PrePersist
     public void prePersist() {
         if (this.idRefreshToken == null) {
-            this.idRefreshToken = UUID.randomUUID().toString().replace("-", "");
+            this.idRefreshToken = UUID.randomUUID();
         }
         if (this.token == null) {
             this.token = UUID.randomUUID().toString();

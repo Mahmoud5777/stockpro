@@ -21,7 +21,7 @@ public class User {
 
     @Id
     @Column(name = "ID_UTIL", length = 32, nullable = false, updatable = false)
-    private String idUtil;
+    private UUID idUtil;
 
     @Column(name = "NOM_COMPLET", length = 150)
     private String nomComplet;
@@ -60,7 +60,7 @@ public class User {
     @PrePersist
     public void prePersist() {
         if (this.idUtil == null) {
-            this.idUtil = UUID.randomUUID().toString().replace("-", "");
+            this.idUtil = UUID.randomUUID();
         }
         if (this.dateCreation == null) {
             this.dateCreation = LocalDate.now();

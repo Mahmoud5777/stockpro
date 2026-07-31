@@ -19,7 +19,7 @@ public class Fonctionnalite {
 
     @Id
     @Column(name = "ID_FONCTIONNALITE", length = 32, nullable = false, updatable = false)
-    private String idFonc;
+    private UUID idFonc;
 
     @Column(name = "COD_FONCTIONNALITE", length = 30)
     private String codeFonc;
@@ -66,7 +66,7 @@ public class Fonctionnalite {
     @PrePersist
     public void prePersist() {
         if (this.idFonc == null) {
-            this.idFonc = UUID.randomUUID().toString().replace("-", "");
+            this.idFonc = UUID.randomUUID();
         }
     }
 }

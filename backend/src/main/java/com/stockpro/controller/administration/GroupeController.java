@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,7 +57,7 @@ public class GroupeController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<GroupeDTO> getById(@PathVariable String id) {
+    public ResponseEntity<GroupeDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(groupeService.findById(id)));
     }
 
@@ -69,14 +70,14 @@ public class GroupeController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<GroupeDTO> update(@PathVariable String id, @Valid @RequestBody GroupeDTO dto) {
+    public ResponseEntity<GroupeDTO> update(@PathVariable UUID id, @Valid @RequestBody GroupeDTO dto) {
         Groupe updated = groupeService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'SUPPRESSION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         groupeService.delete(id);
         return ResponseEntity.noContent().build();
     }

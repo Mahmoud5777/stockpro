@@ -20,7 +20,7 @@ public class UserSite {
 
     @Id
     @Column(name = "ID_UTIL_SITE", length = 32, nullable = false, updatable = false)
-    private String idUtilSite;
+    private UUID idUtilSite;
 
     // Relation "EstRattacheA"
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,7 +44,7 @@ public class UserSite {
     @PrePersist
     public void prePersist() {
         if (this.idUtilSite == null) {
-            this.idUtilSite = UUID.randomUUID().toString().replace("-", "");
+            this.idUtilSite = UUID.randomUUID();
         }
         if (this.dateAffectation == null) {
             this.dateAffectation = LocalDate.now();

@@ -17,7 +17,7 @@ public class LogAcces {
 
     @Id
     @Column(name = "ID_LOG", length = 32, nullable = false, updatable = false)
-    private String idLog;
+    private UUID idLog;
 
     // Login "tel que saisi", conservé même si l'utilisateur n'existe pas
     // (utile pour détecter des tentatives de brute-force sur des comptes inexistants)
@@ -27,7 +27,7 @@ public class LogAcces {
     // Pas de relation JPA vers User : un log d'audit doit survivre
     // même si l'utilisateur est supprimé ou n'a jamais existé.
     @Column(name = "ID_UTIL", length = 32)
-    private String idUtil;
+    private UUID idUtil;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "ACTION", length = 30, nullable = false)
@@ -57,7 +57,7 @@ public class LogAcces {
     @PrePersist
     public void prePersist() {
         if (this.idLog == null) {
-            this.idLog = UUID.randomUUID().toString().replace("-", "");
+            this.idLog = UUID.randomUUID();
         }
         if (this.dateAcces == null) {
             this.dateAcces = LocalDateTime.now();

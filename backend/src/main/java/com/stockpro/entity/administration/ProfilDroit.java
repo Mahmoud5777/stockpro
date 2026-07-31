@@ -15,7 +15,7 @@ public class ProfilDroit {
 
     @Id
     @Column(name = "ID_PROFIL_DROIT", length = 32, nullable = false, updatable = false)
-    private String idProfilDroit;
+    private UUID idProfilDroit;
 
     // Relation "PossedeDroit"
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,7 +48,7 @@ public class ProfilDroit {
     @PrePersist
     public void prePersist() {
         if (this.idProfilDroit == null) {
-            this.idProfilDroit = UUID.randomUUID().toString().replace("-", "");
+            this.idProfilDroit = UUID.randomUUID();
         }
     }
 }

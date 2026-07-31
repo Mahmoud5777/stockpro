@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,13 +39,13 @@ public class ProfilDroitController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<ProfilDroitDTO> getById(@PathVariable String id) {
+    public ResponseEntity<ProfilDroitDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(profilDroitService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/profil/{idPr}")
-    public ResponseEntity<List<ProfilDroitDTO>> getByProfil(@PathVariable String idPr) {
+    public ResponseEntity<List<ProfilDroitDTO>> getByProfil(@PathVariable UUID idPr) {
         List<ProfilDroitDTO> result = profilDroitService.findByProfil(idPr)
                 .stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
@@ -52,7 +53,7 @@ public class ProfilDroitController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/fonctionnalite/{idFonc}")
-    public ResponseEntity<List<ProfilDroitDTO>> getByFonctionnalite(@PathVariable String idFonc) {
+    public ResponseEntity<List<ProfilDroitDTO>> getByFonctionnalite(@PathVariable UUID idFonc) {
         List<ProfilDroitDTO> result = profilDroitService.findByFonctionnalite(idFonc)
                 .stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
@@ -67,14 +68,14 @@ public class ProfilDroitController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<ProfilDroitDTO> update(@PathVariable String id, @Valid @RequestBody ProfilDroitDTO dto) {
+    public ResponseEntity<ProfilDroitDTO> update(@PathVariable UUID id, @Valid @RequestBody ProfilDroitDTO dto) {
         ProfilDroit updated = profilDroitService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         profilDroitService.delete(id);
         return ResponseEntity.noContent().build();
     }

@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -57,7 +58,7 @@ public class ApplicationController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<ApplicationDTO> getById(@PathVariable String id) {
+    public ResponseEntity<ApplicationDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(applicationService.findById(id)));
     }
 
@@ -70,14 +71,14 @@ public class ApplicationController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<ApplicationDTO> update(@PathVariable String id, @Valid @RequestBody ApplicationDTO dto) {
+    public ResponseEntity<ApplicationDTO> update(@PathVariable UUID id, @Valid @RequestBody ApplicationDTO dto) {
         Application updated = applicationService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         applicationService.delete(id);
         return ResponseEntity.noContent().build();
     }

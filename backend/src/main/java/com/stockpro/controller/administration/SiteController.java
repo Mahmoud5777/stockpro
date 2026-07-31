@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -48,7 +49,7 @@ public class SiteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'CONSULTATION')")
     @GetMapping("/{id}")
-    public ResponseEntity<SiteDTO> getById(@PathVariable String id) {
+    public ResponseEntity<SiteDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(mapper.toDto(siteService.findById(id)));
     }
 
@@ -69,7 +70,7 @@ public class SiteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'CONSULTATION')")
     @GetMapping("/{id}/enfants")
-    public ResponseEntity<List<SiteDTO>> getEnfants(@PathVariable String id) {
+    public ResponseEntity<List<SiteDTO>> getEnfants(@PathVariable UUID id) {
         List<SiteDTO> result = siteService.findEnfants(id).stream().map(mapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -83,14 +84,14 @@ public class SiteController {
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'MODIFICATION')")
     @PutMapping("/{id}")
-    public ResponseEntity<SiteDTO> update(@PathVariable String id, @Valid @RequestBody SiteDTO dto) {
+    public ResponseEntity<SiteDTO> update(@PathVariable UUID id, @Valid @RequestBody SiteDTO dto) {
         Site updated = siteService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'SUPPRESSION')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         siteService.delete(id);
         return ResponseEntity.noContent().build();
     }

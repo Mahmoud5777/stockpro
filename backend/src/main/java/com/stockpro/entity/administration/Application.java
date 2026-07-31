@@ -18,7 +18,7 @@ public class Application {
 
     @Id
     @Column(name = "ID_APPLICATION", length = 32, nullable = false, updatable = false)
-    private String idApp;
+    private UUID idApp;
 
     @Column(name = "COD_APPLICATION", length = 30)
     private String codeApp;
@@ -40,7 +40,7 @@ public class Application {
     @PrePersist
     public void prePersist() {
         if (this.idApp == null) {
-            this.idApp = UUID.randomUUID().toString().replace("-", "");
+            this.idApp = UUID.randomUUID();
         }
     }
 }

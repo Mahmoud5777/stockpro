@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,14 +44,14 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Fonctionnalite findById(String id) {
-        return fonctionnaliteRepository.findById(id)
+    public Fonctionnalite findById(UUID id) {
+        return fonctionnaliteRepository.findById(id.toString().replace("-", " "))
                 .orElseThrow(() -> new ResourceNotFoundException("Fonctionnalite", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Fonctionnalite> findByApplication(String idApp) {
+    public List<Fonctionnalite> findByApplication(UUID idApp) {
         return fonctionnaliteRepository.findByApplication_IdApp(idApp);
     }
 
@@ -68,7 +69,7 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
     }
 
     @Override
-    public Fonctionnalite update(String id, Fonctionnalite fonctionnalite) {
+    public Fonctionnalite update(UUID id, Fonctionnalite fonctionnalite) {
         Fonctionnalite existing = findById(id);
         existing.setCodeFonc(fonctionnalite.getCodeFonc());
         existing.setLibelle(fonctionnalite.getLibelle());
@@ -84,14 +85,14 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(UUID id) {
         Fonctionnalite existing = findById(id);
         fonctionnaliteRepository.delete(existing);
     }
 
     private void resolveRelations(Fonctionnalite fonctionnalite) {
         if (fonctionnalite.getApplication() != null && fonctionnalite.getApplication().getIdApp() != null) {
-            Application application = applicationRepository.findById(fonctionnalite.getApplication().getIdApp())
+            Application application = applicationRepository.findById(fonctionnalite.getApplication().getIdApp().toString().replace("-", " "))
                     .orElseThrow(() -> new ResourceNotFoundException("Application", fonctionnalite.getApplication().getIdApp()));
             fonctionnalite.setApplication(application);
         } else if (fonctionnalite.getApplication() == null) {
@@ -99,7 +100,7 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
         }
 
         if (fonctionnalite.getFonctionMere() != null && fonctionnalite.getFonctionMere().getIdFonc() != null) {
-            Fonctionnalite mere = fonctionnaliteRepository.findById(fonctionnalite.getFonctionMere().getIdFonc())
+            Fonctionnalite mere = fonctionnaliteRepository.findById(fonctionnalite.getFonctionMere().getIdFonc().toString().replace("-", " "))
                     .orElseThrow(() -> new ResourceNotFoundException("Fonctionnalite (mere)", fonctionnalite.getFonctionMere().getIdFonc()));
             fonctionnalite.setFonctionMere(mere);
         } else {

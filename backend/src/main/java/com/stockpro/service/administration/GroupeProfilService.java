@@ -6,14 +6,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface GroupeProfilService {
     List<GroupeProfil> findAll();
     Page<GroupeProfil> findAll(Pageable pageable);
-    GroupeProfil findById(String id);
-    List<GroupeProfil> findByGroupe(String idGr);
-    List<GroupeProfil> findByProfil(String idPr);
+    GroupeProfil findById(UUID id);
+    List<GroupeProfil> findByGroupe(UUID idGr);
+    List<GroupeProfil> findByProfil(UUID idPr);
     GroupeProfil create(GroupeProfil groupeProfil);
-    GroupeProfil update(String id, GroupeProfil groupeProfil);
-    void delete(String id);
+    GroupeProfil update(UUID id, GroupeProfil groupeProfil);
+    void delete(UUID id);
 }

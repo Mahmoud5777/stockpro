@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class RoleDTO {
 
-    private String idRl;
+    private UUID idRl;
 
     @NotBlank(message = "Le code rôle est obligatoire")
     @Size(max = 30)

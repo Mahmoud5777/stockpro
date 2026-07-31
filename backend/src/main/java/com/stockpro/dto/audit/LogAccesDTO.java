@@ -4,6 +4,7 @@ import com.stockpro.entity.audit.AuditAction;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,9 +13,9 @@ import java.time.LocalDateTime;
 @Builder
 public class LogAccesDTO {
 
-    private String idLog;
+    private UUID idLog;
     private String login;
-    private String idUtil;
+    private UUID idUtil;
     private AuditAction action;
     private String methodeHttp;
     private String endpoint;

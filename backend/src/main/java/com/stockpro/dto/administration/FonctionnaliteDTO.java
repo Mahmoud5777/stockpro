@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 public class FonctionnaliteDTO {
 
-    private String idFonc;
+    private UUID idFonc;
 
     @NotBlank(message = "Le code fonctionnalité est obligatoire")
     @Size(max = 30)
@@ -34,7 +36,7 @@ public class FonctionnaliteDTO {
     private Boolean actif;
 
     @NotBlank(message = "L'idApp est obligatoire")
-    private String idApp;
+    private UUID idApp;
 
-    private String idFoncMere;
+    private UUID idFoncMere;
 }

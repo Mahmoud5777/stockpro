@@ -8,8 +8,8 @@ import com.stockpro.repository.administration.GroupeProfilRepository;
 import com.stockpro.repository.administration.ProfilDroitRepository;
 import com.stockpro.repository.administration.UserRepository;
 import com.stockpro.repository.administration.UserSiteDroitsRepository;
-import com.stockpro.stockpro.entity.administration.*;
-import com.stockpro.stockpro.repository.administration.*;
+import com.stockpro.entity.administration.*;
+import com.stockpro.repository.administration.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +37,7 @@ public class AuthorizationService {
     private final ProfilDroitRepository profilDroitRepository;
 
     @Transactional(readOnly = true)
-    public List<SiteAllegeDTO> resolveSites(String idUtil) {
+    public List<SiteAllegeDTO> resolveSites(UUID idUtil) {
         User user = userRepository.findById(idUtil).orElseThrow();
         return user.getUserSites().stream()
                 .map(UserSite::getSite)
@@ -47,7 +47,7 @@ public class AuthorizationService {
     }
 
     @Transactional(readOnly = true)
-    public List<FonctionnaliteAvecDroitsDTO> resolveFonctionnalites(String idUtil) {
+    public List<FonctionnaliteAvecDroitsDTO> resolveFonctionnalites(UUID idUtil) {
         User user = userRepository.findById(idUtil).orElseThrow();
 
         // 1. Collecter tous les profils applicables à l'utilisateur (tous sites confondus) :
@@ -57,12 +57,12 @@ public class AuthorizationService {
             List<UserSiteDroits> droits = userSiteDroitsRepository.findByUserSite_IdUtilSite(userSite.getIdUtilSite());
             for (UserSiteDroits d : droits) {
                 if (d.getProfil() != null) {
-                    profilsApplicables.put(d.getProfil().getIdPr(), d.getProfil());
+                    profilsApplicables.put(d.getProfil().getIdPr().toString().replace("-", " "), d.getProfil());
                 }
                 if (d.getGroupe() != null) {
                     for (GroupeProfil gp : groupeProfilRepository.findByGroupe_IdGr(d.getGroupe().getIdGr())) {
                         if (Boolean.TRUE.equals(gp.getActif()) && gp.getProfil() != null) {
-                            profilsApplicables.put(gp.getProfil().getIdPr(), gp.getProfil());
+                            profilsApplicables.put(gp.getProfil().getIdPr().toString().replace("-", " "), gp.getProfil());
                         }
                     }
                 }
@@ -88,7 +88,7 @@ public class AuthorizationService {
                         .build();
 
                 if (existing == null) {
-                    merged.put(f.getIdFonc(), FonctionnaliteAvecDroitsDTO.builder()
+                    merged.put(f.getIdFonc().toString().replace("-", " "), FonctionnaliteAvecDroitsDTO.builder()
                             .idFonctionnalite(f.getIdFonc())
                             .codFonctionnalite(f.getCodeFonc())
                             .libFonctionnalite(f.getLibelle())

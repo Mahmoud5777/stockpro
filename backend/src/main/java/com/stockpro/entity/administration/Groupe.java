@@ -19,7 +19,7 @@ public class Groupe {
 
     @Id
     @Column(name = "ID_GR", length = 32, nullable = false, updatable = false)
-    private String idGr;
+    private UUID idGr;
 
     @Column(name = "COD_GROUPE", length = 30)
     private String codeGroupe;
@@ -51,7 +51,7 @@ public class Groupe {
     @PrePersist
     public void prePersist() {
         if (this.idGr == null) {
-            this.idGr = UUID.randomUUID().toString().replace("-", "");
+            this.idGr = UUID.randomUUID();
         }
     }
 }
