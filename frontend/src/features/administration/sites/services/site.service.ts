@@ -16,8 +16,9 @@ function enrichParents(sites: RawSite[]): Site[] {
 
 export const siteService = {
   async list(params: PageRequest): Promise<Page<Site>> {
+    const { filters, ...rest } = params;
     const [{ data }, all] = await Promise.all([
-      apiClient.get<Page<RawSite>>("/sites", { params }),
+      apiClient.get<Page<RawSite>>("/sites", { params: { ...rest, ...filters } }),
       apiClient.get<RawSite[]>("/sites/all").then((r) => r.data),
     ]);
     const byId = new Map(all.map((s) => [s.idSite, s]));

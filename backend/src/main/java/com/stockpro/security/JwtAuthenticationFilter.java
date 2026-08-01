@@ -50,7 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (login != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(login);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            // ═══ FIX SÉCURITÉ : compte désactivé = pas d'auth même avec JWT valide ═══
+            if (jwtService.isTokenValid(jwt, userDetails) && userDetails.isEnabled()) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

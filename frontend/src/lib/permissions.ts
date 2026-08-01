@@ -1,6 +1,6 @@
 import type { DroitAction } from "@/features/administration/fonctionnalites/types/fonctionnalite.types";
 import type { FonctionnaliteAvecDroits } from "@/features/auth/types/auth.types";
-
+export const PERMISSION_CODE = "ADMIN_UTILISATEURS";
 /**
  * Vérifie si l'utilisateur courant possède le droit demandé sur une fonctionnalité
  * (identifiée par son code, ex: "ADMIN_UTILISATEURS"), en se basant sur la liste

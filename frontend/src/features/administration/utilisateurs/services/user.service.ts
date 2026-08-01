@@ -4,7 +4,6 @@ import type { CrudService } from "@/features/administration/shared/types/crud-se
 import type { Utilisateur, UtilisateurInput } from "../types/user.types";
 import { siteService } from "@/features/administration/sites/services/site.service";
 
-// Forme brute de UTILISATEUR renvoyée par le backend (UserDTO : sans les sites affectés).
 interface RawUser {
   idUtil: string;
   nomComplet: string;
@@ -15,15 +14,8 @@ interface RawUser {
   dateCreation: string;
 }
 
-interface RawUserSite {
-  idUtilSite: string;
-  idUtil: string;
-  idSite: string;
-}
-
-/** Synchronise les affectations utilisateur<->sites via l'endpoint dédié /api/user-sites. */
 async function syncSites(idUtil: string, siteIds: string[]): Promise<void> {
-  const { data: current } = await apiClient.get<RawUserSite[]>(`/user-sites/user/${idUtil}`);
+  const { data: current } = await apiClient.get<{ idUtilSite: string; idSite: string }[]>(`/user-sites/user/${idUtil}`);
   const toAdd = siteIds.filter((id) => !current.some((us) => us.idSite === id));
   const toRemove = current.filter((us) => !siteIds.includes(us.idSite));
 
@@ -33,8 +25,11 @@ async function syncSites(idUtil: string, siteIds: string[]): Promise<void> {
   ]);
 }
 
-async function fetchSites(idUtil: string, siteLabels: Map<string, string>): Promise<{ idSite: string; nomSite: string; idUtilSite: string }[]> {
-  const { data } = await apiClient.get<RawUserSite[]>(`/user-sites/user/${idUtil}`);
+async function fetchSites(
+  idUtil: string,
+  siteLabels: Map<string, string>
+): Promise<{ idSite: string; nomSite: string; idUtilSite: string }[]> {
+  const { data } = await apiClient.get<{ idUtilSite: string; idSite: string }[]>(`/user-sites/user/${idUtil}`);
   return data.map((us) => ({
     idSite: us.idSite,
     nomSite: siteLabels.get(us.idSite) ?? us.idSite,
@@ -44,7 +39,18 @@ async function fetchSites(idUtil: string, siteLabels: Map<string, string>): Prom
 
 export const userService = {
   async list(params: PageRequest): Promise<Page<Utilisateur>> {
-    const { data } = await apiClient.get<Page<RawUser>>("/users", { params });
+    const { filters, ...rest } = params;
+    const queryParams: Record<string, unknown> = { ...rest };
+
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") {
+          queryParams[key] = value;
+        }
+      });
+    }
+
+    const { data } = await apiClient.get<Page<RawUser>>("/users", { params: queryParams });
     const allSites = await siteService.listAll();
     const siteLabels = new Map(allSites.map((s) => [s.idSite, s.nomSite]));
     const content = await Promise.all(
@@ -52,6 +58,7 @@ export const userService = {
     );
     return { ...data, content };
   },
+
   async create(input: UtilisateurInput): Promise<Utilisateur> {
     const { data } = await apiClient.post<RawUser>("/users", {
       nomComplet: input.nomComplet,
@@ -66,6 +73,7 @@ export const userService = {
     const siteLabels = new Map(allSites.map((s) => [s.idSite, s.nomSite]));
     return { ...data, sites: await fetchSites(data.idUtil, siteLabels) };
   },
+
   async update(id: string, input: UtilisateurInput): Promise<Utilisateur> {
     const { data } = await apiClient.put<RawUser>(`/users/${id}`, {
       nomComplet: input.nomComplet,
@@ -80,6 +88,7 @@ export const userService = {
     const siteLabels = new Map(allSites.map((s) => [s.idSite, s.nomSite]));
     return { ...data, sites: await fetchSites(id, siteLabels) };
   },
+
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/users/${id}`);
   },

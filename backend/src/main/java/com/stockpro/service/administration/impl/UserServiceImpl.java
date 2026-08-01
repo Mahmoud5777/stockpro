@@ -36,6 +36,23 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll(pageable);
     }
 
+    // ═══ NOUVEAU ═══
+    @Override
+    @Transactional(readOnly = true)
+    public Page<User> findAll(String search, Boolean etatCompte, UUID siteId, Pageable pageable) {
+        boolean hasSearch = search != null && !search.isBlank();
+        boolean hasFilter = etatCompte != null || siteId != null;
+
+        if (!hasSearch && !hasFilter) {
+            return userRepository.findAll(pageable);
+        }
+        return userRepository.findAllWithFilters(
+                hasSearch ? search : null,
+                etatCompte,
+                siteId,
+                pageable);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<User> search(String query, Pageable pageable) {

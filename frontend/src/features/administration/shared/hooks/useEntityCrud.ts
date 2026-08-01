@@ -9,17 +9,11 @@ import { toast } from "@/store/toast.store";
 
 interface UseEntityCrudOptions {
   resourceKey: string;
-  entityLabel: string; // ex: "l'utilisateur", "le site" -- pour les messages
+  entityLabel: string;
 }
 
-/**
- * Hook générique factorisant la logique CRUD (liste paginée/triée/recherchée,
- * création, modification, suppression) pour un module d'administration donné.
- * Chaque module (utilisateurs, sites, profils, ...) l'utilise avec son propre
- * service typé, ce qui évite toute duplication de logique entre modules.
- */
-export function useEntityCrud<TEntity, TInput>(
-  service: CrudService<TEntity, TInput>,
+export function useEntityCrud<TItem, TInput>(
+  service: CrudService<TItem, TInput>,
   { resourceKey, entityLabel }: UseEntityCrudOptions
 ) {
   const queryClient = useQueryClient();
@@ -27,16 +21,18 @@ export function useEntityCrud<TEntity, TInput>(
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [filters, setFilters] = useState<Record<string, string | boolean | undefined>>({});
 
   const sort = sortKey ? `${sortKey},${sortDirection}` : undefined;
 
   const listQuery = useQuery({
-    queryKey: [resourceKey, "list", { page, search, sort }],
-    queryFn: () => service.list({ page, size: DEFAULT_PAGE_SIZE, search, sort }),
+    queryKey: [resourceKey, "list", { page, search, sort, filters }],
+    queryFn: () => service.list({ page, size: DEFAULT_PAGE_SIZE, search, sort, filters }),
     placeholderData: (prev) => prev,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: [resourceKey, "list"] });
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: [resourceKey, "list"] });
 
   const createMutation = useMutation({
     mutationFn: (input: TInput) => service.create(input),
@@ -74,6 +70,16 @@ export function useEntityCrud<TEntity, TInput>(
     }
   }
 
+  const updateFilters = (patch: Record<string, string | boolean | undefined>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(0);
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+    setPage(0);
+  };
+
   return {
     page,
     setPage,
@@ -85,6 +91,9 @@ export function useEntityCrud<TEntity, TInput>(
     sortKey,
     sortDirection,
     onSortChange,
+    filters,
+    updateFilters,
+    resetFilters,
     listQuery,
     createMutation,
     updateMutation,

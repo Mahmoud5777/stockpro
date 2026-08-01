@@ -8,12 +8,12 @@ import com.stockpro.service.administration.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -27,21 +27,27 @@ public class UserController {
     private final UserService userService;
     private final UserMapper mapper;
 
+    // ═══ UN SEUL ENDPOINT : liste + recherche + filtres ═══
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<UserDTO>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean etatCompte,
+            @RequestParam(required = false) UUID siteId,
             @PageableDefault(size = 20, sort = "nomComplet") Pageable pageable) {
-        Page<UserDTO> page = userService.findAll(pageable).map(mapper::toDto);
+
+        Page<UserDTO> page = userService.findAll(search, etatCompte, siteId, pageable).map(mapper::toDto);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
+    // ─── Transition : redirige l'ancien /search (à supprimer plus tard) ───
+    @Deprecated
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/search")
-    public ResponseEntity<PageResponseDTO<UserDTO>> search(
+    public ResponseEntity<PageResponseDTO<UserDTO>> searchLegacy(
             @RequestParam String q,
             @PageableDefault(size = 20, sort = "nomComplet") Pageable pageable) {
-        Page<UserDTO> page = userService.search(q, pageable).map(mapper::toDto);
-        return ResponseEntity.ok(PageResponseDTO.of(page));
+        return getAll(q, null, null, pageable);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")

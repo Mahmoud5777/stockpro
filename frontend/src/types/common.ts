@@ -1,5 +1,3 @@
-// Types communs partagés dans toute l'application
-
 export interface ApiResponse<T> {
   data: T;
   message?: string;
@@ -10,15 +8,16 @@ export interface Page<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  number: number; // page courante (0-based, aligné Spring Data Page)
+  number: number;
   size: number;
 }
 
 export interface PageRequest {
   page: number;
   size: number;
-  sort?: string; // ex: "libProfil,asc"
+  sort?: string;
   search?: string;
+  filters?: Record<string, string | boolean | undefined>;
 }
 
 export type SortDirection = "asc" | "desc";
