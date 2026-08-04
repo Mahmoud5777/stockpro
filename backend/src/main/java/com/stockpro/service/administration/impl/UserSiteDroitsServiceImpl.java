@@ -49,7 +49,7 @@ public class UserSiteDroitsServiceImpl implements UserSiteDroitsService {
     @Override
     @Transactional(readOnly = true)
     public UserSiteDroitsDTO findById(UUID id) {
-        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findById(id.toString().replace("-", " "))
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("UserSiteDroits", id)));
     }
 
@@ -81,7 +81,7 @@ public class UserSiteDroitsServiceImpl implements UserSiteDroitsService {
 
         // 3. Set the real relations from the IDs
         existing.setUserSite(
-                userSiteRepository.findById(dto.getIdUtilSite().toString().replace("-", " ")).orElseThrow()
+                userSiteRepository.findById(dto.getIdUtilSite()).orElseThrow()
         );
 
         existing.setRole(
@@ -121,7 +121,7 @@ public class UserSiteDroitsServiceImpl implements UserSiteDroitsService {
         // so this method only validates that the IDs exist.
         // The real assignment is done in the update/create method.
 
-        userSiteRepository.findById(dto.getIdUtilSite().toString().replace("-", " "))
+        userSiteRepository.findById(dto.getIdUtilSite())
                 .orElseThrow(() -> new ResourceNotFoundException("UserSite", dto.getIdUtilSite()));
 
         if (dto.getIdRl() != null) {

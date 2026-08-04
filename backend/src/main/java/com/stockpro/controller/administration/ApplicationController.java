@@ -2,8 +2,6 @@ package com.stockpro.controller.administration;
 
 import com.stockpro.dto.administration.ApplicationDTO;
 import com.stockpro.dto.common.PageResponseDTO;
-import com.stockpro.entity.administration.Application;
-import com.stockpro.mapper.administration.ApplicationMapper;
 import com.stockpro.service.administration.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,14 +25,13 @@ import java.util.UUID;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
-    private final ApplicationMapper mapper;
 
     @Operation(summary = "Lister les applications (paginé)")
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<ApplicationDTO>> getAll(
             @PageableDefault(size = 20, sort = "nomApp") Pageable pageable) {
-        Page<ApplicationDTO> page = applicationService.findAll(pageable).map(mapper::toDto);
+        Page<ApplicationDTO> page = applicationService.findAll(pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
@@ -42,8 +39,7 @@ public class ApplicationController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping("/all")
     public ResponseEntity<List<ApplicationDTO>> getAllUnpaged() {
-        List<ApplicationDTO> result = applicationService.findAll().stream().map(mapper::toDto).collect(java.util.stream.Collectors.toList());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(applicationService.findAll());
     }
 
     @Operation(summary = "Rechercher une application par nom ou code")
@@ -52,28 +48,28 @@ public class ApplicationController {
     public ResponseEntity<PageResponseDTO<ApplicationDTO>> search(
             @RequestParam String q,
             @PageableDefault(size = 20, sort = "nomApp") Pageable pageable) {
-        Page<ApplicationDTO> page = applicationService.search(q, pageable).map(mapper::toDto);
+        Page<ApplicationDTO> page = applicationService.search(q, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ApplicationDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(mapper.toDto(applicationService.findById(id)));
+        return ResponseEntity.ok(applicationService.findById(id));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")
     @PostMapping
     public ResponseEntity<ApplicationDTO> create(@Valid @RequestBody ApplicationDTO dto) {
-        Application created = applicationService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+        ApplicationDTO created = applicationService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")
     @PutMapping("/{id}")
     public ResponseEntity<ApplicationDTO> update(@PathVariable UUID id, @Valid @RequestBody ApplicationDTO dto) {
-        Application updated = applicationService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(mapper.toDto(updated));
+        ApplicationDTO updated = applicationService.update(id, dto);
+        return ResponseEntity.ok(updated);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'MODIFICATION')")

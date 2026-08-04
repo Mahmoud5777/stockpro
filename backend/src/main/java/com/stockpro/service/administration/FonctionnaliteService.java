@@ -1,6 +1,6 @@
 package com.stockpro.service.administration;
 
-import com.stockpro.entity.administration.Fonctionnalite;
+import com.stockpro.dto.administration.FonctionnaliteDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FonctionnaliteService {
-    List<Fonctionnalite> findAll();
-    Page<Fonctionnalite> findAll(Pageable pageable);
-    Page<Fonctionnalite> search(String query, Pageable pageable);
-    Fonctionnalite findById(UUID id);
-    List<Fonctionnalite> findByApplication(UUID idApp);
-    List<Fonctionnalite> findRacines();
-    Fonctionnalite create(Fonctionnalite fonctionnalite);
-    Fonctionnalite update(UUID id, Fonctionnalite fonctionnalite);
+    List<FonctionnaliteDTO> findAll();
+    Page<FonctionnaliteDTO> findAll(Pageable pageable);
+    Page<FonctionnaliteDTO> search(String query, Pageable pageable);
+    FonctionnaliteDTO findById(UUID id);
+    List<FonctionnaliteDTO> findByApplication(UUID idApp);
+    List<FonctionnaliteDTO> findRacines();
+    FonctionnaliteDTO create(FonctionnaliteDTO fonctionnaliteDTO);
+    FonctionnaliteDTO update(UUID id, FonctionnaliteDTO fonctionnaliteDTO);
     void delete(UUID id);
 }

@@ -2,8 +2,6 @@ package com.stockpro.controller.administration;
 
 import com.stockpro.dto.administration.GroupeProfilDTO;
 import com.stockpro.dto.common.PageResponseDTO;
-import com.stockpro.entity.administration.GroupeProfil;
-import com.stockpro.mapper.administration.GroupeProfilMapper;
 import com.stockpro.service.administration.GroupeProfilService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/groupe-profils")
@@ -27,47 +24,44 @@ import java.util.stream.Collectors;
 public class GroupeProfilController {
 
     private final GroupeProfilService groupeProfilService;
-    private final GroupeProfilMapper mapper;
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<GroupeProfilDTO>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        Page<GroupeProfilDTO> page = groupeProfilService.findAll(pageable).map(mapper::toDto);
+        Page<GroupeProfilDTO> page = groupeProfilService.findAll(pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/{id}")
     public ResponseEntity<GroupeProfilDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(mapper.toDto(groupeProfilService.findById(id)));
+        return ResponseEntity.ok(groupeProfilService.findById(id));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/groupe/{idGr}")
     public ResponseEntity<List<GroupeProfilDTO>> getByGroupe(@PathVariable UUID idGr) {
-        List<GroupeProfilDTO> result = groupeProfilService.findByGroupe(idGr).stream().map(mapper::toDto).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(groupeProfilService.findByGroupe(idGr));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'CONSULTATION')")
     @GetMapping("/profil/{idPr}")
     public ResponseEntity<List<GroupeProfilDTO>> getByProfil(@PathVariable UUID idPr) {
-        List<GroupeProfilDTO> result = groupeProfilService.findByProfil(idPr).stream().map(mapper::toDto).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(groupeProfilService.findByProfil(idPr));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @PostMapping
     public ResponseEntity<GroupeProfilDTO> create(@Valid @RequestBody GroupeProfilDTO dto) {
-        GroupeProfil created = groupeProfilService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+        GroupeProfilDTO created = groupeProfilService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")
     @PutMapping("/{id}")
     public ResponseEntity<GroupeProfilDTO> update(@PathVariable UUID id, @Valid @RequestBody GroupeProfilDTO dto) {
-        GroupeProfil updated = groupeProfilService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(mapper.toDto(updated));
+        GroupeProfilDTO updated = groupeProfilService.update(id, dto);
+        return ResponseEntity.ok(updated);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'MODIFICATION')")

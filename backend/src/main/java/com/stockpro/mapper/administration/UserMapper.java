@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
 
 @Component
 public class UserMapper {
@@ -47,7 +46,7 @@ public class UserMapper {
     public User toEntity(UserDTO dto) {
         if (dto == null) return null;
         return User.builder()
-                .idUtil(UUID.fromString(dto.getIdUtil().toString().replace("-", " ")))
+                .idUtil(dto.getIdUtil())
                 .nomComplet(dto.getNomComplet())
                 .login(dto.getLogin())
                 .motPasse(dto.getMotPasse())

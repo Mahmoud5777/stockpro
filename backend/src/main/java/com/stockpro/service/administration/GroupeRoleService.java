@@ -1,6 +1,6 @@
 package com.stockpro.service.administration;
 
-import com.stockpro.entity.administration.GroupeRole;
+import com.stockpro.dto.administration.GroupeRoleDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface GroupeRoleService {
-    List<GroupeRole> findAll();
-    Page<GroupeRole> findAll(Pageable pageable);
-    GroupeRole findById(UUID id);
-    List<GroupeRole> findByGroupe(UUID idGr);
-    List<GroupeRole> findByRole(UUID idRl);
-    GroupeRole create(GroupeRole groupeRole);
-    GroupeRole update(UUID id, GroupeRole groupeRole);
+    List<GroupeRoleDTO> findAll();
+    Page<GroupeRoleDTO> findAll(Pageable pageable);
+    GroupeRoleDTO findById(UUID id);
+    List<GroupeRoleDTO> findByGroupe(UUID idGr);
+    List<GroupeRoleDTO> findByRole(UUID idRl);
+    GroupeRoleDTO create(GroupeRoleDTO groupeRoleDTO);
+    GroupeRoleDTO update(UUID id, GroupeRoleDTO groupeRoleDTO);
     void delete(UUID id);
 }

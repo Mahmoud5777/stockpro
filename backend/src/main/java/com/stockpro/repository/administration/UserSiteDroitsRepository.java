@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface UserSiteDroitsRepository extends JpaRepository<UserSiteDroits, String> {
+public interface UserSiteDroitsRepository extends JpaRepository<UserSiteDroits, UUID> {
     List<UserSiteDroits> findByUserSite_IdUtilSite(UUID idUtilSite);
     List<UserSiteDroits> findByRole_IdRl(UUID idRl);
     List<UserSiteDroits> findByProfil_IdPr(UUID idPr);

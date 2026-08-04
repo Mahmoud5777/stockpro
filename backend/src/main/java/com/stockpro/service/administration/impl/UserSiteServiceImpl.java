@@ -45,7 +45,7 @@ public class UserSiteServiceImpl implements UserSiteService {
     @Override
     @Transactional(readOnly = true)
     public UserSiteDTO findById(UUID id) {
-        return uSM.toDto(userSiteRepository.findById(id.toString().replace("-", " "))
+        return uSM.toDto(userSiteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("UserSite", id)));
     }
 
