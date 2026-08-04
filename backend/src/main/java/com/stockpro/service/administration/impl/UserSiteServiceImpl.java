@@ -1,9 +1,11 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.dto.administration.UserSiteDTO;
 import com.stockpro.entity.administration.Site;
 import com.stockpro.entity.administration.User;
 import com.stockpro.entity.administration.UserSite;
 import com.stockpro.exception.ResourceNotFoundException;
+import com.stockpro.mapper.administration.UserSiteMapper;
 import com.stockpro.repository.administration.SiteRepository;
 import com.stockpro.repository.administration.UserRepository;
 import com.stockpro.repository.administration.UserSiteRepository;
@@ -26,58 +28,66 @@ public class UserSiteServiceImpl implements UserSiteService {
     private final UserSiteRepository userSiteRepository;
     private final UserRepository userRepository;
     private final SiteRepository siteRepository;
+    private final UserSiteMapper uSM;
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSite> findAll() {
-        return userSiteRepository.findAll();
+    public List<UserSiteDTO> findAll() {
+        return uSM.toDto(userSiteRepository.findAll());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserSite> findAll(Pageable pageable) {
-        return userSiteRepository.findAll(pageable);
+    public Page<UserSiteDTO> findAll(Pageable pageable) {
+        return uSM.toDto(userSiteRepository.findAll(pageable));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserSite findById(UUID id) {
-        return userSiteRepository.findById(id.toString().replace("-", " "))
-                .orElseThrow(() -> new ResourceNotFoundException("UserSite", id));
+    public UserSiteDTO findById(UUID id) {
+        return uSM.toDto(userSiteRepository.findById(id.toString().replace("-", " "))
+                .orElseThrow(() -> new ResourceNotFoundException("UserSite", id)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSite> findByUser(UUID idUtil) {
-        return userSiteRepository.findByUser_IdUtil(idUtil);
+    public List<UserSiteDTO> findByUser(UUID idUtil) {
+        return uSM.toDto(userSiteRepository.findByUser_IdUtil(idUtil));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSite> findBySite(UUID idSite) {
-        return userSiteRepository.findBySite_IdSite(idSite);
+    public List<UserSiteDTO> findBySite(UUID idSite) {
+        return uSM.toDto(userSiteRepository.findBySite_IdSite(idSite));
     }
 
     @Override
-    public UserSite create(UserSite userSite) {
+    public UserSiteDTO create(UserSiteDTO userSite) {
         userSite.setIdUtilSite(null);
-        resolveRelations(userSite);
-        return userSiteRepository.save(userSite);
-    }
+        resolveRelations(uSM.toEntity(userSite));
+        UserSite userSiteEntity = uSM.toEntity(userSite);
 
+        UserSite savedUserSite = userSiteRepository.save(userSiteEntity);
+        return uSM.toDto(userSiteRepository.save(savedUserSite));
+    }
     @Override
-    public UserSite update(UUID id, UserSite userSite) {
-        UserSite existing = findById(id);
-        existing.setDateAffectation(userSite.getDateAffectation());
-        resolveRelations(userSite);
-        existing.setUser(userSite.getUser());
-        existing.setSite(userSite.getSite());
-        return userSiteRepository.save(existing);
-    }
+    public UserSiteDTO update(UUID id, UserSiteDTO dto) {
+        UserSite existing = uSM.toEntity(findById(id));
 
+        existing.setDateAffectation(dto.getDateAffectation());
+
+        // Convert DTO → entity just to resolve the relations
+        UserSite temp = uSM.toEntity(dto);
+        resolveRelations(temp);
+
+        existing.setUser(temp.getUser());
+        existing.setSite(temp.getSite());
+
+        return uSM.toDto(userSiteRepository.save(existing));
+    }
     @Override
     public void delete(UUID id) {
-        UserSite existing = findById(id);
+        UserSite existing = uSM.toEntity(findById(id));
         userSiteRepository.delete(existing);
     }
 
