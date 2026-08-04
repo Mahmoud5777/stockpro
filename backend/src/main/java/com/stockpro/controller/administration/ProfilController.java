@@ -2,8 +2,6 @@ package com.stockpro.controller.administration;
 
 import com.stockpro.dto.administration.ProfilDTO;
 import com.stockpro.dto.common.PageResponseDTO;
-import com.stockpro.entity.administration.Profil;
-import com.stockpro.mapper.administration.ProfilMapper;
 import com.stockpro.service.administration.ProfilService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/profils")
@@ -28,13 +25,12 @@ import java.util.stream.Collectors;
 public class ProfilController {
 
     private final ProfilService profilService;
-    private final ProfilMapper mapper;
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<ProfilDTO>> getAll(
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<ProfilDTO> page = profilService.findAll(pageable).map(mapper::toDto);
+        Page<ProfilDTO> page = profilService.findAll(pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
@@ -43,7 +39,7 @@ public class ProfilController {
     public ResponseEntity<PageResponseDTO<ProfilDTO>> search(
             @RequestParam String q,
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<ProfilDTO> page = profilService.search(q, pageable).map(mapper::toDto);
+        Page<ProfilDTO> page = profilService.search(q, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
@@ -51,28 +47,26 @@ public class ProfilController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/all")
     public ResponseEntity<List<ProfilDTO>> getAllUnpaged() {
-        List<ProfilDTO> result = profilService.findAll().stream().map(mapper::toDto).collect(Collectors.toList());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(profilService.findAll());
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping("/{id}")
     public ResponseEntity<ProfilDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(mapper.toDto(profilService.findById(id)));
+        return ResponseEntity.ok(profilService.findById(id));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'AJOUT')")
     @PostMapping
     public ResponseEntity<ProfilDTO> create(@Valid @RequestBody ProfilDTO dto) {
-        Profil created = profilService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
+        ProfilDTO created = profilService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'MODIFICATION')")
     @PutMapping("/{id}")
     public ResponseEntity<ProfilDTO> update(@PathVariable UUID id, @Valid @RequestBody ProfilDTO dto) {
-        Profil updated = profilService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(mapper.toDto(updated));
+        return ResponseEntity.ok(profilService.update(id, dto));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'SUPPRESSION')")

@@ -1,6 +1,6 @@
 package com.stockpro.service.administration;
 
-import com.stockpro.entity.administration.Profil;
+import com.stockpro.dto.administration.ProfilDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProfilService {
-    List<Profil> findAll();
-    Page<Profil> findAll(Pageable pageable);
-    Page<Profil> search(String query, Pageable pageable);
-    Profil findById(UUID id);
-    Profil create(Profil profil);
-    Profil update(UUID id, Profil profil);
+    List<ProfilDTO> findAll();
+    Page<ProfilDTO> findAll(Pageable pageable);
+    Page<ProfilDTO> search(String query, Pageable pageable);
+    ProfilDTO findById(UUID id);
+    ProfilDTO create(ProfilDTO dto);
+    ProfilDTO update(UUID id, ProfilDTO dto);
     void delete(UUID id);
 }
