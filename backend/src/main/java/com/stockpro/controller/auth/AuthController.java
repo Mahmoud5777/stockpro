@@ -10,6 +10,7 @@ import com.stockpro.dto.auth.RegisterRequestDTO;
 import com.stockpro.entity.administration.RefreshToken;
 import com.stockpro.entity.administration.User;
 import com.stockpro.entity.audit.AuditAction;
+import com.stockpro.mapper.administration.UserMapper;
 import com.stockpro.security.JwtService;
 import com.stockpro.service.administration.RefreshTokenService;
 import com.stockpro.service.administration.UserService;
@@ -43,6 +44,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final AuditService auditService;
     private final AuthorizationService authorizationService;
+    private final UserMapper userMapper;
 
     @Operation(summary = "Connexion : retourne un access token (JWT) et un refresh token")
     @PostMapping("/login")
@@ -54,7 +56,7 @@ public class AuthController {
         );
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
-        User user = userService.findByLogin(request.getLogin());
+        User user = userMapper.toEntity(userService.findByLogin(request.getLogin()));
 
         String accessToken = jwtService.generateToken(userDetails);
         RefreshToken refreshToken = refreshTokenService.create(user);
@@ -75,7 +77,7 @@ public class AuthController {
                 .etatCompte(true)
                 .build();
 
-        User created = userService.create(user);
+        User created = userMapper.toEntity(userService.create(userMapper.toDto(user)));
         auditService.log(AuditAction.LOGIN_SUCCESS, created.getLogin(), created.getIdUtil(),
                 httpRequest, 201, "Création de compte");
 
@@ -124,7 +126,7 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<MeResponseDTO> me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.findByLogin(authentication.getName());
+        User user = userMapper.toEntity(userService.findByLogin(authentication.getName()));
 
         MeResponseDTO response = MeResponseDTO.builder()
                 .idUtil(user.getIdUtil())
@@ -145,15 +147,15 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> changePassword(@Valid @RequestBody ChangeCredentialsRequestDTO request,
                                                           HttpServletRequest httpRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User current = userService.findByLogin(authentication.getName());
+        User current = userMapper.toEntity(userService.findByLogin(authentication.getName()));
 
         // IMPORTANT : si newLogin est renseigné, le login de l'utilisateur change en base.
         // L'ancien access token (dont le "subject" JWT est l'ancien login) devient donc
         // invalide dès cet instant : toute requête ultérieure avec ce token échouera avec
         // UsernameNotFoundException. Il faut donc régénérer un access token + refresh token
         // à jour et les renvoyer au frontend, exactement comme au login.
-        User updated = userService.changeCredentials(current.getIdUtil(), request.getCurrentPassword(),
-                request.getNewLogin(), request.getNewPassword());
+        User updated = userMapper.toEntity(userService.changeCredentials(current.getIdUtil(), request.getCurrentPassword(),
+                request.getNewLogin(), request.getNewPassword()));
 
         auditService.log(AuditAction.LOGIN_SUCCESS, updated.getLogin(), updated.getIdUtil(),
                 httpRequest, 200, "Changement des identifiants (mot de passe temporaire)");

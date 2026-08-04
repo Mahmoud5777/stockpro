@@ -36,7 +36,7 @@ public class UserController {
             @RequestParam(required = false) UUID siteId,
             @PageableDefault(size = 20, sort = "nomComplet") Pageable pageable) {
 
-        Page<UserDTO> page = userService.findAll(search, etatCompte, siteId, pageable).map(mapper::toDto);
+        Page<UserDTO> page = userService.findAll(search, etatCompte, siteId, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
@@ -53,26 +53,26 @@ public class UserController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(mapper.toDto(userService.findById(id)));
+        return ResponseEntity.ok((userService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/login/{login}")
     public ResponseEntity<UserDTO> getByLogin(@PathVariable String login) {
-        return ResponseEntity.ok(mapper.toDto(userService.findByLogin(login)));
+        return ResponseEntity.ok((userService.findByLogin(login)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'AJOUT')")
     @PostMapping
     public ResponseEntity<UserDTO> create(@Valid @RequestBody UserDTO dto) {
-        User created = userService.create(mapper.toEntity(dto));
+        User created = mapper.toEntity(userService.create(dto));
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> update(@PathVariable UUID id, @Valid @RequestBody UserDTO dto) {
-        User updated = userService.update(id, mapper.toEntity(dto));
+        User updated = mapper.toEntity(userService.update(id, dto));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 
