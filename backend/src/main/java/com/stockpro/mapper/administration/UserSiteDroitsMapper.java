@@ -2,7 +2,9 @@ package com.stockpro.mapper.administration;
 
 import com.stockpro.dto.administration.UserSiteDroitsDTO;
 import com.stockpro.entity.administration.*;
-
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,6 +20,16 @@ public class UserSiteDroitsMapper {
                 .idGr(entity.getGroupe() != null ? entity.getGroupe().getIdGr() : null)
                 .dateAffectation(entity.getDateAffectation())
                 .build();
+    }
+    public List<UserSiteDroitsDTO> toDto(List<UserSiteDroits> entities) {
+        if (entities == null) return null;
+        return entities.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+    public Page<UserSiteDroitsDTO> toDto(Page<UserSiteDroits> page) {
+        if (page == null) return null;
+        return page.map(this::toDto);
     }
 
     public UserSiteDroits toEntity(UserSiteDroitsDTO dto) {

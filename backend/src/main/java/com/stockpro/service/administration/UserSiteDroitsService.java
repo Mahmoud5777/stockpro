@@ -1,5 +1,6 @@
 package com.stockpro.service.administration;
 
+import com.stockpro.dto.administration.UserSiteDroitsDTO;
 import com.stockpro.entity.administration.UserSiteDroits;
 
 import org.springframework.data.domain.Page;
@@ -9,11 +10,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface UserSiteDroitsService {
-    List<UserSiteDroits> findAll();
-    Page<UserSiteDroits> findAll(Pageable pageable);
-    UserSiteDroits findById(UUID id);
-    List<UserSiteDroits> findByUserSite(UUID idUtilSite);
-    UserSiteDroits create(UserSiteDroits userSiteDroits);
-    UserSiteDroits update(UUID id, UserSiteDroits userSiteDroits);
+    List<UserSiteDroitsDTO> findAll();
+    Page<UserSiteDroitsDTO> findAll(Pageable pageable);
+    UserSiteDroitsDTO findById(UUID id);
+    List<UserSiteDroitsDTO> findByUserSite(UUID idUtilSite);
+    UserSiteDroitsDTO create(UserSiteDroitsDTO userSiteDroits);
+    UserSiteDroitsDTO update(UUID id, UserSiteDroitsDTO userSiteDroits);
     void delete(UUID id);
 }

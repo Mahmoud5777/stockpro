@@ -16,9 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/user-site-droits")
@@ -32,35 +33,34 @@ public class UserSiteDroitsController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<UserSiteDroitsDTO>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        Page<UserSiteDroitsDTO> page = userSiteDroitsService.findAll(pageable).map(mapper::toDto);
+        Page<UserSiteDroitsDTO> page = userSiteDroitsService.findAll(pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/{id}")
     public ResponseEntity<UserSiteDroitsDTO> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(mapper.toDto(userSiteDroitsService.findById(id)));
+        return ResponseEntity.ok((userSiteDroitsService.findById(id)));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
     @GetMapping("/user-site/{idUtilSite}")
     public ResponseEntity<List<UserSiteDroitsDTO>> getByUserSite(@PathVariable UUID idUtilSite) {
-        List<UserSiteDroitsDTO> result = userSiteDroitsService.findByUserSite(idUtilSite)
-                .stream().map(mapper::toDto).collect(Collectors.toList());
+        List<UserSiteDroitsDTO> result = new ArrayList<>(userSiteDroitsService.findByUserSite(idUtilSite));
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @PostMapping
     public ResponseEntity<UserSiteDroitsDTO> create(@Valid @RequestBody UserSiteDroitsDTO dto) {
-        UserSiteDroits created = userSiteDroitsService.create(mapper.toEntity(dto));
+        UserSiteDroits created = mapper.toEntity(userSiteDroitsService.create((dto)));
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(created));
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'MODIFICATION')")
     @PutMapping("/{id}")
     public ResponseEntity<UserSiteDroitsDTO> update(@PathVariable UUID id, @Valid @RequestBody UserSiteDroitsDTO dto) {
-        UserSiteDroits updated = userSiteDroitsService.update(id, mapper.toEntity(dto));
+        UserSiteDroits updated = mapper.toEntity(userSiteDroitsService.update(id, (dto)));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 

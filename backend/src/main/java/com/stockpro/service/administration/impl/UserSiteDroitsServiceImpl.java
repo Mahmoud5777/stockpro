@@ -1,11 +1,10 @@
 package com.stockpro.service.administration.impl;
 
-import com.stockpro.entity.administration.Groupe;
-import com.stockpro.entity.administration.Profil;
-import com.stockpro.entity.administration.Role;
-import com.stockpro.entity.administration.UserSite;
+import com.stockpro.dto.administration.UserSiteDroitsDTO;
+
 import com.stockpro.entity.administration.UserSiteDroits;
 import com.stockpro.exception.ResourceNotFoundException;
+import com.stockpro.mapper.administration.UserSiteDroitsMapper;
 import com.stockpro.repository.administration.GroupeRepository;
 import com.stockpro.repository.administration.ProfilRepository;
 import com.stockpro.repository.administration.RoleRepository;
@@ -13,7 +12,6 @@ import com.stockpro.repository.administration.UserSiteDroitsRepository;
 import com.stockpro.repository.administration.UserSiteRepository;
 import com.stockpro.service.administration.UserSiteDroitsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.objenesis.instantiator.util.UnsafeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,86 +32,111 @@ public class UserSiteDroitsServiceImpl implements UserSiteDroitsService {
     private final ProfilRepository profilRepository;
     private final GroupeRepository groupeRepository;
 
+    private final UserSiteDroitsMapper userSiteDroitsMapper;
+
     @Override
     @Transactional(readOnly = true)
-    public List<UserSiteDroits> findAll() {
-        return userSiteDroitsRepository.findAll();
+    public List<UserSiteDroitsDTO> findAll() {
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findAll());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserSiteDroits> findAll(Pageable pageable) {
-        return userSiteDroitsRepository.findAll(pageable);
+    public Page<UserSiteDroitsDTO> findAll(Pageable pageable) {
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findAll(pageable));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserSiteDroits findById(UUID id) {
-        return userSiteDroitsRepository.findById(id.toString().replace("-", " "))
-                .orElseThrow(() -> new ResourceNotFoundException("UserSiteDroits", id));
+    public UserSiteDroitsDTO findById(UUID id) {
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findById(id.toString().replace("-", " "))
+                .orElseThrow(() -> new ResourceNotFoundException("UserSiteDroits", id)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSiteDroits> findByUserSite(UUID idUtilSite) {
-        return userSiteDroitsRepository.findByUserSite_IdUtilSite(idUtilSite);
+    public List<UserSiteDroitsDTO> findByUserSite(UUID idUtilSite) {
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.findByUserSite_IdUtilSite(idUtilSite));
     }
 
     @Override
-    public UserSiteDroits create(UserSiteDroits userSiteDroits) {
+    public UserSiteDroitsDTO create(UserSiteDroitsDTO userSiteDroits) {
         userSiteDroits.setIdUserSiteDroit(null);
-        resolveRelations(userSiteDroits);
-        return userSiteDroitsRepository.save(userSiteDroits);
+        resolveRelations((userSiteDroits));
+        UserSiteDroits usd = userSiteDroitsMapper.toEntity(userSiteDroits);
+
+        UserSiteDroits saved = userSiteDroitsRepository.save(usd);
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.save(saved));
     }
 
     @Override
-    public UserSiteDroits update(UUID id, UserSiteDroits userSiteDroits) {
-        UserSiteDroits existing = findById(id);
-        existing.setDateAffectation(userSiteDroits.getDateAffectation());
-        resolveRelations(userSiteDroits);
-        existing.setUserSite(userSiteDroits.getUserSite());
-        existing.setRole(userSiteDroits.getRole());
-        existing.setProfil(userSiteDroits.getProfil());
-        existing.setGroupe(userSiteDroits.getGroupe());
-        return userSiteDroitsRepository.save(existing);
+    public UserSiteDroitsDTO update(UUID id, UserSiteDroitsDTO dto) {
+        UserSiteDroits existing = userSiteDroitsMapper.toEntity(findById(id));
+
+        // 1. Simple field
+        existing.setDateAffectation(dto.getDateAffectation());
+
+        // 2. Validate the IDs first
+        resolveRelations(dto);
+
+        // 3. Set the real relations from the IDs
+        existing.setUserSite(
+                userSiteRepository.findById(dto.getIdUtilSite().toString().replace("-", " ")).orElseThrow()
+        );
+
+        existing.setRole(
+                dto.getIdRl() != null
+                        ? roleRepository.findById(dto.getIdRl().toString().replace("-", " ")).orElseThrow()
+                        : null
+        );
+
+        existing.setProfil(
+                dto.getIdPr() != null
+                        ? profilRepository.findById(dto.getIdPr().toString().replace("-", " ")).orElseThrow()
+                        : null
+        );
+
+        existing.setGroupe(
+                dto.getIdGr() != null
+                        ? groupeRepository.findById(dto.getIdGr().toString().replace("-", " ")).orElseThrow()
+                        : null
+        );
+
+        return userSiteDroitsMapper.toDto(userSiteDroitsRepository.save(existing));
     }
+
 
     @Override
     public void delete(UUID id) {
-        UserSiteDroits existing = findById(id);
+        UserSiteDroits existing = userSiteDroitsMapper.toEntity(findById(id));
         userSiteDroitsRepository.delete(existing);
     }
-
-    private void resolveRelations(UserSiteDroits userSiteDroits) {
-        if (userSiteDroits.getUserSite() == null || userSiteDroits.getUserSite().getIdUtilSite() == null) {
+    private void resolveRelations(UserSiteDroitsDTO dto) {
+        // UserSite is mandatory
+        if (dto.getIdUtilSite() == null) {
             throw new IllegalArgumentException("Le userSite (idUtilSite) est obligatoire");
         }
-        UserSite userSite = userSiteRepository.findById(userSiteDroits.getUserSite().getIdUtilSite().toString().replace("-", " "))
-                .orElseThrow(() -> new ResourceNotFoundException("UserSite", userSiteDroits.getUserSite().getIdUtilSite()));
-        userSiteDroits.setUserSite(userSite);
 
-        if (userSiteDroits.getRole() != null && userSiteDroits.getRole().getIdRl() != null) {
-            Role role = roleRepository.findById(userSiteDroits.getRole().getIdRl().toString().replace("-", " "))
-                    .orElseThrow(() -> new ResourceNotFoundException("Role", userSiteDroits.getRole().getIdRl()));
-            userSiteDroits.setRole(role);
-        } else {
-            userSiteDroits.setRole(null);
+        // We cannot store the entity inside the DTO (it has no such field),
+        // so this method only validates that the IDs exist.
+        // The real assignment is done in the update/create method.
+
+        userSiteRepository.findById(dto.getIdUtilSite().toString().replace("-", " "))
+                .orElseThrow(() -> new ResourceNotFoundException("UserSite", dto.getIdUtilSite()));
+
+        if (dto.getIdRl() != null) {
+            roleRepository.findById(dto.getIdRl().toString().replace("-", " "))
+                    .orElseThrow(() -> new ResourceNotFoundException("Role", dto.getIdRl()));
         }
 
-        if (userSiteDroits.getProfil() != null && userSiteDroits.getProfil().getIdPr() != null) {
-            Profil profil = profilRepository.findById(userSiteDroits.getProfil().getIdPr().toString().replace("-", " "))
-                    .orElseThrow(() -> new ResourceNotFoundException("Profil", userSiteDroits.getProfil().getIdPr()));
-            userSiteDroits.setProfil(profil);
-        } else {
-            userSiteDroits.setProfil(null);
+        if (dto.getIdPr() != null) {
+            profilRepository.findById(dto.getIdPr().toString().replace("-", " "))
+                    .orElseThrow(() -> new ResourceNotFoundException("Profil", dto.getIdPr()));
         }
 
-        if (userSiteDroits.getGroupe() != null && userSiteDroits.getGroupe().getIdGr() != null) {
-            Groupe groupe = groupeRepository.findById(userSiteDroits.getGroupe().getIdGr().toString().replace("-", " "))
-                    .orElseThrow(() -> new ResourceNotFoundException("Groupe", userSiteDroits.getGroupe().getIdGr()));
-            userSiteDroits.setGroupe(groupe);
-        } else {
-            userSiteDroits.setGroupe(null);
+        if (dto.getIdGr() != null) {
+            groupeRepository.findById(dto.getIdGr().toString().replace("-", " "))
+                    .orElseThrow(() -> new ResourceNotFoundException("Groupe", dto.getIdGr()));
         }
     }
 }
