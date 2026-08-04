@@ -1,6 +1,6 @@
 package com.stockpro.service.administration;
 
-import com.stockpro.entity.administration.Site;
+import com.stockpro.dto.administration.SiteDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface SiteService {
-    List<Site> findAll();
-    Page<Site> findAll(Pageable pageable);
-    Page<Site> search(String query, Pageable pageable);
-    Site findById(UUID id);
-    List<Site> findRacines();
-    List<Site> findEnfants(UUID idSiteParent);
-    Site create(Site site);
-    Site update(UUID id, Site site);
+    List<SiteDTO> findAll();
+    Page<SiteDTO> findAll(Pageable pageable);
+    Page<SiteDTO> search(String query, Pageable pageable);
+    SiteDTO findById(UUID id);
+    List<SiteDTO> findRacines();
+    List<SiteDTO> findEnfants(UUID idSiteParent);
+    SiteDTO create(SiteDTO dto);
+    SiteDTO update(UUID id, SiteDTO dto);
     void delete(UUID id);
 }

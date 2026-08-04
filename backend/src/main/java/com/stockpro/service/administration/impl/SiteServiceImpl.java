@@ -1,7 +1,9 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.dto.administration.SiteDTO;
 import com.stockpro.entity.administration.Site;
 import com.stockpro.exception.ResourceNotFoundException;
+import com.stockpro.mapper.administration.SiteMapper;
 import com.stockpro.repository.administration.SiteRepository;
 import com.stockpro.service.administration.SiteService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,76 +23,86 @@ import java.util.UUID;
 public class SiteServiceImpl implements SiteService {
 
     private final SiteRepository siteRepository;
+    private final SiteMapper mapper;
 
     @Override
     @Transactional(readOnly = true)
-    public List<Site> findAll() {
-        return siteRepository.findAll();
+    public List<SiteDTO> findAll() {
+        return siteRepository.findAll().stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Site> findAll(Pageable pageable) {
-        return siteRepository.findAll(pageable);
+    public Page<SiteDTO> findAll(Pageable pageable) {
+        return siteRepository.findAll(pageable).map(mapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Site> search(String query, Pageable pageable) {
-        return siteRepository.findByNomSiteContainingIgnoreCaseOrCodeSiteContainingIgnoreCase(query, query, pageable);
+    public Page<SiteDTO> search(String query, Pageable pageable) {
+        return siteRepository
+                .findByNomSiteContainingIgnoreCaseOrCodeSiteContainingIgnoreCase(query, query, pageable)
+                .map(mapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Site findById(UUID id) {
-        return siteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Site", id));
+    public SiteDTO findById(UUID id) {
+        return mapper.toDto(getEntity(id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Site> findRacines() {
-        return siteRepository.findBySiteParentIsNull();
+    public List<SiteDTO> findRacines() {
+        return siteRepository.findBySiteParentIsNull().stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Site> findEnfants(UUID idSiteParent) {
-        return siteRepository.findBySiteParent_IdSite(idSiteParent);
+    public List<SiteDTO> findEnfants(UUID idSiteParent) {
+        return siteRepository.findBySiteParent_IdSite(idSiteParent).stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Site create(Site site) {
+    public SiteDTO create(SiteDTO dto) {
+        Site site = mapper.toEntity(dto);
         site.setIdSite(null);
-        resolveParent(site);
-        return siteRepository.save(site);
+        site.setSiteParent(resolveParent(dto.getIdSiteParent()));
+        return mapper.toDto(siteRepository.save(site));
     }
 
     @Override
-    public Site update(UUID id, Site site) {
-        Site existing = findById(id);
-        existing.setCodeSite(site.getCodeSite());
-        existing.setNomSite(site.getNomSite());
-        existing.setDescription(site.getDescription());
-        existing.setAddress(site.getAddress());
-        resolveParent(site);
-        existing.setSiteParent(site.getSiteParent());
-        return siteRepository.save(existing);
+    public SiteDTO update(UUID id, SiteDTO dto) {
+        Site existing = getEntity(id);
+        existing.setCodeSite(dto.getCodeSite());
+        existing.setNomSite(dto.getNomSite());
+        existing.setDescription(dto.getDescription());
+        existing.setAddress(dto.getAddress());
+        existing.setSiteParent(resolveParent(dto.getIdSiteParent()));
+        return mapper.toDto(siteRepository.save(existing));
     }
 
     @Override
     public void delete(UUID id) {
-        Site existing = findById(id);
-        siteRepository.delete(existing);
+        siteRepository.delete(getEntity(id));
     }
 
-    private void resolveParent(Site site) {
-        if (site.getSiteParent() != null && site.getSiteParent().getIdSite() != null) {
-            Site parent = siteRepository.findById(site.getSiteParent().getIdSite())
-                    .orElseThrow(() -> new ResourceNotFoundException("Site (parent)", site.getSiteParent().getIdSite()));
-            site.setSiteParent(parent);
-        } else {
-            site.setSiteParent(null);
+    private Site getEntity(UUID id) {
+        return siteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Site", id));
+    }
+
+    private Site resolveParent(UUID idSiteParent) {
+        if (idSiteParent == null) {
+            return null;
         }
+        return siteRepository.findById(idSiteParent)
+                .orElseThrow(() -> new ResourceNotFoundException("Site (parent)", idSiteParent));
     }
 }
