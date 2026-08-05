@@ -18,7 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
-
+D:\stock_pro\frontend\node_modules\@next\swc-win32-x64-msvc/*
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
