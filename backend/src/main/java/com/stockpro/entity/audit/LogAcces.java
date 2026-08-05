@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LogAcces {
+public class  LogAcces {
 
     @Id
     @Column(name = "ID_LOG", length = 32, nullable = false, updatable = false)

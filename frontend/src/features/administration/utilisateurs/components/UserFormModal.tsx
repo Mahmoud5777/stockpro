@@ -104,7 +104,7 @@ export function UserFormModal({ isOpen, onClose, onSubmit, isSubmitting, initial
       </div>
 
       {tab === "infos" ? (
-        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
           <Input label="Nom complet" error={errors.nomComplet?.message} {...register("nomComplet")} />
           <Input label="Login" error={errors.login?.message} {...register("login")} />
           <Input label="Email" type="email" error={errors.email?.message} {...register("email")} />
@@ -112,6 +112,8 @@ export function UserFormModal({ isOpen, onClose, onSubmit, isSubmitting, initial
           <Input
             label={isEdit ? "Nouveau mot de passe (laisser vide pour ne pas changer)" : "Mot de passe"}
             type="password"
+            autoComplete="new-password"
+            spellCheck={false}
             error={errors.motPasse?.message}
             {...register("motPasse")}
           />

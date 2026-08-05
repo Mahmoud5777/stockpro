@@ -2,7 +2,7 @@ package com.stockpro.mapper.administration;
 
 import com.stockpro.dto.administration.UserSiteDroitsDTO;
 import com.stockpro.entity.administration.*;
-import com.stockpro.stockpro.entity.administration.*;
+import com.stockpro.entity.administration.*;
 import org.springframework.stereotype.Component;
 
 @Component

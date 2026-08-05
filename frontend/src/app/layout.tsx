@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
+// @ts-expect-error CSS import handled by Next.js
 import "./globals.css";
 import { Providers } from "./providers/Providers";
 
