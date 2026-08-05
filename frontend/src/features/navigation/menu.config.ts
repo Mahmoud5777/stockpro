@@ -1,6 +1,6 @@
-import type { IconType } from "react-icons";
+import type { ElementType } from "react";
 import {
-  FiGrid,
+  FiHome,
   FiUsers,
   FiMapPin,
   FiShield,
@@ -21,14 +21,14 @@ import { ROUTES } from "@/lib/constants";
 export interface MenuItem {
   label: string;
   href?: string;
-  icon: IconType;
+  icon: ElementType;
   /** Code de la fonctionnalité côté backend, utilisé pour le filtrage des droits. Null = toujours visible (ex: Dashboard). */
   code: string | null;
   children?: MenuItem[];
 }
 
 export const MENU_CONFIG: MenuItem[] = [
-  { label: "Dashboard", href: ROUTES.dashboard, icon: FiGrid, code: null },
+  { label: "Dashboard", href: ROUTES.dashboard, icon: FiHome, code: null },
   {
     label: "Administration",
     icon: FiSliders,

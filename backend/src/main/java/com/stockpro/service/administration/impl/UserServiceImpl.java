@@ -1,22 +1,23 @@
 package com.stockpro.service.administration.impl;
 
-import com.stockpro.dto.administration.UserDTO;
-import com.stockpro.entity.administration.User;
-import com.stockpro.exception.ResourceNotFoundException;
-import com.stockpro.repository.administration.UserRepository;
-import com.stockpro.service.administration.UserService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.stockpro.dto.administration.UserDTO;
+import com.stockpro.entity.administration.User;
+import com.stockpro.exception.ResourceNotFoundException;
 import com.stockpro.mapper.administration.UserMapper;
+import com.stockpro.repository.administration.UserRepository;
+import com.stockpro.service.administration.UserService;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.util.List;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -127,7 +128,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO changeCredentials(UUID idUtil, String currentPassword, String newLogin, String newPassword) {
-        UserDTO existing = findById(idUtil);
+        User existing = userRepository.findById(idUtil)
+                .orElseThrow(() -> new ResourceNotFoundException("User", idUtil));
 
         if (!passwordEncoder.matches(currentPassword, existing.getMotPasse())) {
             throw new BadCredentialsException("Mot de passe actuel incorrect");
@@ -137,16 +139,9 @@ public class UserServiceImpl implements UserService {
             existing.setLogin(newLogin);
         }
         existing.setMotPasse(passwordEncoder.encode(newPassword));
-        userMapper.toEntity(existing).setDoitChangerMdp(false);
-        // Convert DTO → Entity
-        User entity = userMapper.toEntity(existing);  // or modelMapper.map(...)
+        existing.setDoitChangerMdp(false);   // sur l'entité réelle
 
-// Save the entity
-        User saved = userRepository.save(entity);
-
-// Convert back Entity → DTO
-        return userMapper.toDto(saved);
-
+        return userMapper.toDto(userRepository.save(existing));
     }
 
     @Override

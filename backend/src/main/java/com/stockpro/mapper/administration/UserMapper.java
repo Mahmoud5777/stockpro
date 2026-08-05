@@ -19,9 +19,9 @@ public class UserMapper {
                 .email(entity.getEmail())
                 .telephone(entity.getTelephone())
                 .etatCompte(entity.getEtatCompte())
+                .doitChangerMdp(entity.getDoitChangerMdp())
                 .dateCreation(entity.getDateCreation())
                 .build();
-        // motPasse volontairement absent : jamais renvoyé au client
     }
 
 
@@ -53,6 +53,7 @@ public class UserMapper {
                 .email(dto.getEmail())
                 .telephone(dto.getTelephone())
                 .etatCompte(dto.getEtatCompte())
+                .doitChangerMdp(dto.getDoitChangerMdp())
                 .dateCreation(dto.getDateCreation())
                 .build();
     }

@@ -40,7 +40,7 @@ public class UserDTO {
 
     private Boolean etatCompte;
 
-    private Boolean DoitChangerMdp;
+    private Boolean doitChangerMdp;
 
     private LocalDate dateCreation;
 }

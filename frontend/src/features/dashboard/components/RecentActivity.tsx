@@ -1,13 +1,18 @@
 "use client";
 
-import { FiEdit2, FiPlusCircle, FiTrash2, FiLogIn } from "react-icons/fi";
+import {
+  FiEdit2,
+  FiTrash2,
+  FiLogIn,
+  FiPlus
+} from "react-icons/fi";
 import type { RecentActivityItem } from "../types/dashboard.types";
 import { timeAgo } from "@/utils/date";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Loader } from "@/components/ui/Loader";
 
 const iconByType = {
-  creation: { icon: FiPlusCircle, color: "text-emerald-500" },
+  creation: { icon: FiPlus, color: "text-emerald-500" },
   modification: { icon: FiEdit2, color: "text-brand-500" },
   suppression: { icon: FiTrash2, color: "text-red-500" },
   connexion: { icon: FiLogIn, color: "text-amber-500" },

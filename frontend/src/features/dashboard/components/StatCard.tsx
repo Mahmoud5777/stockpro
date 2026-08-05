@@ -1,6 +1,6 @@
 "use client";
 
-import type { IconType } from "react-icons";
+import type { ElementType } from "react";
 import { FiArrowDownRight, FiArrowUpRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { cn } from "@/utils/cn";
@@ -8,7 +8,7 @@ import { cn } from "@/utils/cn";
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: IconType;
+  icon: ElementType;
   variationPct?: number;
   accent?: "brand" | "emerald" | "amber" | "rose";
 }

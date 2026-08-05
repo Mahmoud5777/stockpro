@@ -2,7 +2,17 @@
 
 import { forwardRef } from "react";
 import type { SVGProps, ReactNode } from "react";
-import { motion } from "motion/react";
+
+type MotionSvgProps = SVGProps<SVGSVGElement> & {
+  whileHover?: unknown;
+  transition?: unknown;
+};
+
+const MotionSvg = forwardRef<SVGSVGElement, MotionSvgProps>(({ whileHover: _whileHover, transition: _transition, ...props }, ref) => (
+  <svg ref={ref} {...props} />
+));
+
+const motion = { svg: MotionSvg };
 
 type IconProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -338,9 +348,6 @@ const FiSun = createIcon("FiSun", () => (
 
 const FiArrowDownRight = createIcon("FiArrowDownRight", () => <path d="M8 8h8v8M8 8l8 8" />);
 const FiArrowUpRight = createIcon("FiArrowUpRight", () => <path d="M8 16h8V8M8 16l8-8" />);
-
-const FiChevronRight = createIcon("FiChevronRight", () => <path d="m9 6 6 6-6 6" />);
-
 const FiSearchSpinner = createIcon("FiSearchSpinner", () => <circle cx="12" cy="12" r="8" />);
 
 export {
@@ -393,11 +400,6 @@ export {
   FiUsers,
   FiX,
   FiXCircle,
-  FiChevronRight,
-  FiChevronDown,
-  FiChevronLeft,
-  FiChevronsLeft,
-  FiChevronsRight,
 };
 
 export type { IconProps };
