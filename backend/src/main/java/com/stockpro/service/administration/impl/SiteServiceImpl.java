@@ -1,11 +1,13 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.config.FilterDefinitions;
 import com.stockpro.dto.administration.SiteDTO;
 import com.stockpro.entity.administration.Site;
 import com.stockpro.exception.ResourceNotFoundException;
 import com.stockpro.mapper.administration.SiteMapper;
 import com.stockpro.repository.administration.SiteRepository;
 import com.stockpro.service.administration.SiteService;
+import com.stockpro.util.EntitySpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,9 +44,8 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SiteDTO> search(String query, Pageable pageable) {
-        return siteRepository
-                .findByNomSiteContainingIgnoreCaseOrCodeSiteContainingIgnoreCase(query, query, pageable)
+    public Page<SiteDTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+        return EntitySpecifications.findAll(siteRepository, FilterDefinitions.SITE, search, filters, pageable)
                 .map(mapper::toDto);
     }
 

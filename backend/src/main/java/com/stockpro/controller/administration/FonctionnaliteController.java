@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,17 +29,10 @@ public class FonctionnaliteController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<FonctionnaliteDTO>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters,
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<FonctionnaliteDTO> page = fonctionnaliteService.findAll(pageable);
-        return ResponseEntity.ok(PageResponseDTO.of(page));
-    }
-
-    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")
-    @GetMapping("/search")
-    public ResponseEntity<PageResponseDTO<FonctionnaliteDTO>> search(
-            @RequestParam String q,
-            @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<FonctionnaliteDTO> page = fonctionnaliteService.search(q, pageable);
+        Page<FonctionnaliteDTO> page = fonctionnaliteService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 

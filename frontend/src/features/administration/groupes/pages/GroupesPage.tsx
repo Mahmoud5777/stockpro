@@ -8,6 +8,7 @@ import type { Groupe } from "../types/groupe.types";
 import type { GroupeFormValues } from "../validation/groupe.validation";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +20,7 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 const PERMISSION_CODE = "ADMIN_GROUPES";
 
 export function GroupesPage() {
-  const { page, setPage, search, setSearch, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useGroupes();
+  const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useGroupes();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Groupe | null>(null);
   const [deleting, setDeleting] = useState<Groupe | null>(null);
@@ -42,14 +43,20 @@ export function GroupesPage() {
         title="Groupes"
         description="Combinez profils et rôles en groupes attribuables aux utilisateurs par site."
         breadcrumb={[{ label: "Administration" }, { label: "Groupes" }]}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher un groupe..."
         actions={
           <RequirePermission code={PERMISSION_CODE} action="ajout">
             <Button leftIcon={<FiPlus size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>Nouveau groupe</Button>
           </RequirePermission>
         }
+      />
+      <SearchToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un groupe..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={[]}
       />
       <PageCard>
         <DataTable

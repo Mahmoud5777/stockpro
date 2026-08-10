@@ -1,11 +1,14 @@
 import { apiClient } from "@/lib/axios";
 import type { Page, PageRequest } from "@/types/common";
 import type { CrudService } from "@/features/administration/shared/types/crud-service.types";
+import { buildListParams } from "@/features/administration/shared/services/buildListParams";
 import type { Fonctionnalite, FonctionnaliteInput } from "../types/fonctionnalite.types";
 
 export const fonctionnaliteService = {
   async list(params: PageRequest): Promise<Page<Fonctionnalite>> {
-    const { data } = await apiClient.get<Page<Fonctionnalite>>("/fonctionnalites", { params });
+    const { data } = await apiClient.get<Page<Fonctionnalite>>("/fonctionnalites", {
+      params: buildListParams(params),
+    });
     return data;
   },
   async create(input: FonctionnaliteInput): Promise<Fonctionnalite> {

@@ -8,6 +8,7 @@ import type { Profil } from "../types/profil.types";
 import type { ProfilFormValues } from "../validation/profil.validation";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +20,7 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 const PERMISSION_CODE = "ADMIN_PROFILS";
 
 export function ProfilsPage() {
-  const { page, setPage, search, setSearch, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useProfils();
+  const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useProfils();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Profil | null>(null);
   const [deleting, setDeleting] = useState<Profil | null>(null);
@@ -47,14 +48,20 @@ export function ProfilsPage() {
         title="Profils"
         description="Définissez des profils de droits réutilisables, applicables via les groupes."
         breadcrumb={[{ label: "Administration" }, { label: "Profils" }]}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher un profil..."
         actions={
           <RequirePermission code={PERMISSION_CODE} action="ajout">
             <Button leftIcon={<FiPlus size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>Nouveau profil</Button>
           </RequirePermission>
         }
+      />
+      <SearchToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un profil..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={[]}
       />
       <PageCard>
         <DataTable

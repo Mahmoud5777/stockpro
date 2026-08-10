@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import type { Page, PageRequest } from "@/types/common";
 import type { CrudService } from "@/features/administration/shared/types/crud-service.types";
+import { buildListParams } from "@/features/administration/shared/services/buildListParams";
 import type { Groupe, GroupeInput } from "../types/groupe.types";
 import { profilService } from "@/features/administration/profils/services/profil.service";
 import { roleService } from "@/features/administration/roles/services/role.service";
@@ -59,7 +60,9 @@ async function syncAssociations(idGr: string, profilIds: string[], roleIds: stri
 
 export const groupeService = {
   async list(params: PageRequest): Promise<Page<Groupe>> {
-    const { data } = await apiClient.get<Page<RawGroupe>>("/groupes", { params });
+    const { data } = await apiClient.get<Page<RawGroupe>>("/groupes", {
+      params: buildListParams(params),
+    });
     const [profils, roles] = await Promise.all([profilService.listAll(), roleService.listAll()]);
     const profilLabels = new Map(profils.map((p) => [p.idPr, p.libelle]));
     const roleLabels = new Map(roles.map((r) => [r.idRl, r.libelle]));

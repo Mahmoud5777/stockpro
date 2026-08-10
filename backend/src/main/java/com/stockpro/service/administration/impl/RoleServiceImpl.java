@@ -1,11 +1,13 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.config.FilterDefinitions;
 import com.stockpro.dto.administration.RoleDTO;
 import com.stockpro.entity.administration.Role;
 import com.stockpro.exception.ResourceNotFoundException;
 import com.stockpro.mapper.administration.RoleMapper;
 import com.stockpro.repository.administration.RoleRepository;
 import com.stockpro.service.administration.RoleService;
+import com.stockpro.util.EntitySpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,9 +44,8 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RoleDTO> search(String query, Pageable pageable) {
-        return roleRepository
-                .findByLibelleContainingIgnoreCaseOrCodeRoleContainingIgnoreCase(query, query, pageable)
+    public Page<RoleDTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+        return EntitySpecifications.findAll(roleRepository, FilterDefinitions.ROLE, search, filters, pageable)
                 .map(mapper::toDto);
     }
 

@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -29,17 +30,10 @@ public class ProfilController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<ProfilDTO>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters,
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<ProfilDTO> page = profilService.findAll(pageable);
-        return ResponseEntity.ok(PageResponseDTO.of(page));
-    }
-
-    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'CONSULTATION')")
-    @GetMapping("/search")
-    public ResponseEntity<PageResponseDTO<ProfilDTO>> search(
-            @RequestParam String q,
-            @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
-        Page<ProfilDTO> page = profilService.search(q, pageable);
+        Page<ProfilDTO> page = profilService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 

@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -32,22 +33,11 @@ public class UserController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<UserDTO>> getAll(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Boolean etatCompte,
-            @RequestParam(required = false) UUID siteId,
+            @RequestParam Map<String, String> filters,
             @PageableDefault(size = 20, sort = "nomComplet") Pageable pageable) {
 
-        Page<UserDTO> page = userService.findAll(search, etatCompte, siteId, pageable);
+        Page<UserDTO> page = userService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
-    }
-
-    // ─── Transition : redirige l'ancien /search (à supprimer plus tard) ───
-    @Deprecated
-    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")
-    @GetMapping("/search")
-    public ResponseEntity<PageResponseDTO<UserDTO>> searchLegacy(
-            @RequestParam String q,
-            @PageableDefault(size = 20, sort = "nomComplet") Pageable pageable) {
-        return getAll(q, null, null, pageable);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")

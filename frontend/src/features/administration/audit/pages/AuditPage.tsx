@@ -3,11 +3,12 @@
 import { FiLogIn, FiLogOut, FiRefreshCw, FiActivity, FiXCircle } from "react-icons/fi";
 import { useAuditLogs } from "../hooks/useAuditLogs";
 import type { AuditLog, AuditActionType } from "../types/audit.types";
+import type { FilterConfig } from "@/features/administration/shared/types/filter-config.types";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
-import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/utils/date";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
@@ -21,9 +22,19 @@ const ACTION_CONFIG: Record<AuditActionType, { label: string; variant: "success"
   ACCES_API: { label: "Appel API", variant: "warning", icon: FiActivity },
 };
 
-const ACTION_OPTIONS = [
-  { value: "", label: "Toutes les actions" },
-  ...Object.entries(ACTION_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label })),
+const ACTION_OPTIONS = Object.entries(ACTION_CONFIG).map(([value, cfg]) => ({
+  value,
+  label: cfg.label,
+}));
+
+const FILTERS_CONFIG: FilterConfig[] = [
+  {
+    key: "action",
+    label: "Événement",
+    type: "select",
+    options: ACTION_OPTIONS,
+    className: "w-56",
+  },
 ];
 
 /**
@@ -32,7 +43,7 @@ const ACTION_OPTIONS = [
  * Aucune action de création/modification/suppression n'est proposée ici.
  */
 export function AuditPage() {
-  const { page, setPage, search, setSearch, action, setAction, sortKey, sortDirection, onSortChange, listQuery } = useAuditLogs();
+  const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery } = useAuditLogs();
 
   const columns: DataTableColumn<AuditLog>[] = [
     { key: "dateAcces", label: "Date & heure", sortable: true, render: (row) => formatDate(row.dateAcces, true) },
@@ -75,17 +86,15 @@ export function AuditPage() {
         title="Audit des accès"
         description="Consultez l'historique des connexions, déconnexions et appels API (lecture seule)."
         breadcrumb={[{ label: "Administration" }, { label: "Audit des accès" }]}
+      />
+      <SearchToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Rechercher par login..."
-        actions={
-          <Select
-            options={ACTION_OPTIONS}
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            className="w-56"
-          />
-        }
+        searchPlaceholder="Rechercher par login, endpoint, IP..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={FILTERS_CONFIG}
       />
       <PageCard>
         <DataTable

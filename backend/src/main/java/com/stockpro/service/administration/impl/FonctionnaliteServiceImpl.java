@@ -1,5 +1,6 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.config.FilterDefinitions;
 import com.stockpro.dto.administration.FonctionnaliteDTO;
 import com.stockpro.entity.administration.Application;
 import com.stockpro.entity.administration.Fonctionnalite;
@@ -8,6 +9,7 @@ import com.stockpro.mapper.administration.FonctionnaliteMapper;
 import com.stockpro.repository.administration.ApplicationRepository;
 import com.stockpro.repository.administration.FonctionnaliteRepository;
 import com.stockpro.service.administration.FonctionnaliteService;
+import com.stockpro.util.EntitySpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,8 +47,8 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FonctionnaliteDTO> search(String query, Pageable pageable) {
-        return fonctionnaliteRepository.findByLibelleContainingIgnoreCaseOrCodeFoncContainingIgnoreCase(query, query, pageable)
+    public Page<FonctionnaliteDTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+        return EntitySpecifications.findAll(fonctionnaliteRepository, FilterDefinitions.FONCTIONNALITE, search, filters, pageable)
                 .map(fonctionnaliteMapper::toDto);
     }
 

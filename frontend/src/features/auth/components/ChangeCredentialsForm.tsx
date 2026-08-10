@@ -17,7 +17,10 @@ export function ChangeCredentialsForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ChangeCredentialsFormValues>({ resolver: zodResolver(changeCredentialsSchema) });
+  } = useForm<ChangeCredentialsFormValues>({
+    resolver: zodResolver(changeCredentialsSchema),
+    reValidateMode: "onChange",
+  });
 
   return (
     <form
@@ -36,6 +39,7 @@ export function ChangeCredentialsForm() {
         placeholder="••••••••"
         leftIcon={<FiKey size={16} />}
         error={errors.currentPassword?.message}
+        autoComplete="current-password"
         {...register("currentPassword")}
       />
 
@@ -47,6 +51,7 @@ export function ChangeCredentialsForm() {
         leftIcon={<FiUser size={16} />}
         hint="Laissez vide pour garder le login actuel"
         error={errors.newLogin?.message}
+        autoComplete="username"
         {...register("newLogin")}
       />
       <Input
@@ -55,6 +60,7 @@ export function ChangeCredentialsForm() {
         placeholder="••••••••"
         leftIcon={<FiLock size={16} />}
         error={errors.newPassword?.message}
+        autoComplete="new-password"
         {...register("newPassword")}
       />
       <Input
@@ -63,6 +69,7 @@ export function ChangeCredentialsForm() {
         placeholder="••••••••"
         leftIcon={<FiLock size={16} />}
         error={errors.confirmPassword?.message}
+        autoComplete="new-password"
         {...register("confirmPassword")}
       />
 

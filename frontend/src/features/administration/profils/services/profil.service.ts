@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import type { Page, PageRequest } from "@/types/common";
 import type { CrudService } from "@/features/administration/shared/types/crud-service.types";
+import { buildListParams } from "@/features/administration/shared/services/buildListParams";
 import type { Profil, ProfilInput, ProfilDroitLigne } from "../types/profil.types";
 import type { DroitsFonctionnalite } from "@/features/administration/fonctionnalites/types/fonctionnalite.types";
 
@@ -79,7 +80,9 @@ async function syncDroits(idPr: string, droits: { idFonctionnalite: string; droi
 
 export const profilService = {
   async list(params: PageRequest): Promise<Page<Profil>> {
-    const { data } = await apiClient.get<Page<RawProfil>>("/profils", { params });
+    const { data } = await apiClient.get<Page<RawProfil>>("/profils", {
+      params: buildListParams(params),
+    });
     const content = await Promise.all(
       data.content.map(async (p) => ({ ...p, droits: await fetchDroits(p.idPr) }))
     );

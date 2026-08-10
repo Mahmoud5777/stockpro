@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react";
 import type { SVGProps, ReactNode } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 
 type IconProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -339,9 +339,23 @@ const FiSun = createIcon("FiSun", () => (
 const FiArrowDownRight = createIcon("FiArrowDownRight", () => <path d="M8 8h8v8M8 8l8 8" />);
 const FiArrowUpRight = createIcon("FiArrowUpRight", () => <path d="M8 16h8V8M8 16l8-8" />);
 
-const FiChevronRight = createIcon("FiChevronRight", () => <path d="m9 6 6 6-6 6" />);
-
 const FiSearchSpinner = createIcon("FiSearchSpinner", () => <circle cx="12" cy="12" r="8" />);
+
+const FiGrid = createIcon("FiGrid", () => (
+  <>
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </>
+));
+
+const FiPlusCircle = createIcon("FiPlusCircle", () => (
+  <>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 8v8M8 12h8" />
+  </>
+));
 
 export {
   FiActivity,
@@ -364,6 +378,7 @@ export {
   FiClipboard,
   FiEdit2,
   FiFileText,
+  FiGrid,
   FiHome,
   FiInbox,
   FiInfo,
@@ -378,6 +393,7 @@ export {
   FiMoon,
   FiPackage,
   FiPlus,
+  FiPlusCircle,
   FiRefreshCw,
   FiSearch,
   FiSearchSpinner,
@@ -393,11 +409,6 @@ export {
   FiUsers,
   FiX,
   FiXCircle,
-  FiChevronRight,
-  FiChevronDown,
-  FiChevronLeft,
-  FiChevronsLeft,
-  FiChevronsRight,
 };
 
 export type { IconProps };

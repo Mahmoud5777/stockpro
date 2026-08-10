@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -29,17 +30,10 @@ public class SiteController {
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'CONSULTATION')")
     @GetMapping
     public ResponseEntity<PageResponseDTO<SiteDTO>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters,
             @PageableDefault(size = 20, sort = "nomSite") Pageable pageable) {
-        Page<SiteDTO> page = siteService.findAll(pageable);
-        return ResponseEntity.ok(PageResponseDTO.of(page));
-    }
-
-    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'CONSULTATION')")
-    @GetMapping("/search")
-    public ResponseEntity<PageResponseDTO<SiteDTO>> search(
-            @RequestParam String q,
-            @PageableDefault(size = 20, sort = "nomSite") Pageable pageable) {
-        Page<SiteDTO> page = siteService.search(q, pageable);
+        Page<SiteDTO> page = siteService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
     }
 

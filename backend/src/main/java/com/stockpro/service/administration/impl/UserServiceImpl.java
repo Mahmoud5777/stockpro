@@ -1,10 +1,12 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.config.FilterDefinitions;
 import com.stockpro.dto.administration.UserDTO;
 import com.stockpro.entity.administration.User;
 import com.stockpro.exception.ResourceNotFoundException;
 import com.stockpro.repository.administration.UserRepository;
 import com.stockpro.service.administration.UserService;
+import com.stockpro.util.EntitySpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -39,27 +42,12 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDtoPage(userRepository.findAll(pageable));
     }
 
-    // ═══ NOUVEAU ═══
+    // ═══ Recherche unifiée : texte + filtres, moteur universel ═══
     @Override
     @Transactional(readOnly = true)
-    public Page<UserDTO> findAll(String search, Boolean etatCompte, UUID siteId, Pageable pageable) {
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasFilter = etatCompte != null || siteId != null;
-
-        if (!hasSearch && !hasFilter) {
-            return userMapper.toDtoPage(userRepository.findAll(pageable));
-        }
-        return userMapper.toDtoPage(userRepository.findAllWithFilters(
-                hasSearch ? search : null,
-                etatCompte,
-                siteId,
-                pageable));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<UserDTO> search(String query, Pageable pageable) {
-        return userMapper.toDtoPage(userRepository.findByNomCompletContainingIgnoreCaseOrLoginContainingIgnoreCase(query, query, pageable));
+    public Page<UserDTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+        return EntitySpecifications.findAll(userRepository, FilterDefinitions.UTILISATEUR, search, filters, pageable)
+                .map(userMapper::toDto);
     }
 
     @Override
@@ -99,24 +87,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO update(UUID id, UserDTO user) {
-        UserDTO existing = findById(id);
-        existing.setNomComplet(user.getNomComplet());
-        existing.setLogin(user.getLogin());
+        User entity = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        entity.setNomComplet(user.getNomComplet());
+        entity.setLogin(user.getLogin());
         if (user.getMotPasse() != null && !user.getMotPasse().isBlank()) {
-            existing.setMotPasse(passwordEncoder.encode(user.getMotPasse()));
+            entity.setMotPasse(passwordEncoder.encode(user.getMotPasse()));
         }
-        existing.setEmail(user.getEmail());
-        existing.setTelephone(user.getTelephone());
-        existing.setEtatCompte(user.getEtatCompte());
-        // Convert DTO → Entity
-        User entity = userMapper.toEntity(existing);  // or modelMapper.map(...)
-
-// Save the entity
-        User saved = userRepository.save(entity);
-
-// Convert back Entity → DTO
-        return userMapper.toDto(saved);
-
+        entity.setEmail(user.getEmail());
+        entity.setTelephone(user.getTelephone());
+        entity.setEtatCompte(user.getEtatCompte());
+        return userMapper.toDto(userRepository.save(entity));
     }
 
     @Override
@@ -127,7 +108,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO changeCredentials(UUID idUtil, String currentPassword, String newLogin, String newPassword) {
-        UserDTO existing = findById(idUtil);
+        // Le DTO ne transporte JAMAIS motPasse (voir UserMapper.toDto) : on passe
+        // par l'entité pour vérifier l'ancien mot de passe contre le hash réel.
+        User existing = userRepository.findById(idUtil)
+                .orElseThrow(() -> new ResourceNotFoundException("User", idUtil));
 
         if (!passwordEncoder.matches(currentPassword, existing.getMotPasse())) {
             throw new BadCredentialsException("Mot de passe actuel incorrect");
@@ -137,16 +121,10 @@ public class UserServiceImpl implements UserService {
             existing.setLogin(newLogin);
         }
         existing.setMotPasse(passwordEncoder.encode(newPassword));
-        userMapper.toEntity(existing).setDoitChangerMdp(false);
-        // Convert DTO → Entity
-        User entity = userMapper.toEntity(existing);  // or modelMapper.map(...)
 
-// Save the entity
-        User saved = userRepository.save(entity);
+        existing.setDoitChangerMdp(false);
 
-// Convert back Entity → DTO
-        return userMapper.toDto(saved);
-
+        return userMapper.toDto(userRepository.save(existing));
     }
 
     @Override

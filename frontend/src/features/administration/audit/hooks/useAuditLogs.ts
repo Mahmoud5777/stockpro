@@ -9,17 +9,17 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 export function useAuditLogs() {
   const [page, setPage] = useState(0);
-  const [search, setSearchState] = useState(""); // filtre sur le login (voir audit.service.ts)
-  const [action, setActionState] = useState<AuditActionType | "">("");
-  // Tri par défaut aligné sur le champ réel du backend (LOG_ACCES.DATE_ACCES).
+  const [search, setSearchState] = useState("");
+  const [filters, setFilters] = useState<Record<string, string | boolean | undefined>>({});
   const [sortKey, setSortKey] = useState<string | undefined>("dateAcces");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const sort = sortKey ? `${sortKey},${sortDirection}` : undefined;
 
   const listQuery = useQuery({
-    queryKey: ["audit-acces", "list", { page, search, action, sort }],
-    queryFn: () => auditService.list({ page, size: DEFAULT_PAGE_SIZE, login: search, action, sort }),
+    queryKey: ["audit-acces", "list", { page, search, filters, sort }],
+    queryFn: () =>
+      auditService.list({ page, size: DEFAULT_PAGE_SIZE, search, filters, sort }),
     placeholderData: (prev) => prev,
   });
 
@@ -32,13 +32,27 @@ export function useAuditLogs() {
     }
   }
 
+  const updateFilters = (patch: Record<string, string | boolean | undefined>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(0);
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+    setPage(0);
+  };
+
   return {
     page,
     setPage,
     search,
-    setSearch: (v: string) => { setSearchState(v); setPage(0); },
-    action,
-    setAction: (v: string) => { setActionState(v as AuditActionType | ""); setPage(0); },
+    setSearch: (v: string) => {
+      setSearchState(v);
+      setPage(0);
+    },
+    filters,
+    updateFilters,
+    resetFilters,
     sortKey,
     sortDirection,
     onSortChange,

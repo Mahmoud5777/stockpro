@@ -1,11 +1,13 @@
 package com.stockpro.service.administration.impl;
 
+import com.stockpro.config.FilterDefinitions;
 import com.stockpro.dto.administration.ProfilDTO;
 import com.stockpro.entity.administration.Profil;
 import com.stockpro.exception.ResourceNotFoundException;
 import com.stockpro.mapper.administration.ProfilMapper;
 import com.stockpro.repository.administration.ProfilRepository;
 import com.stockpro.service.administration.ProfilService;
+import com.stockpro.util.EntitySpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,9 +44,8 @@ public class ProfilServiceImpl implements ProfilService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProfilDTO> search(String query, Pageable pageable) {
-        return profilRepository
-                .findByLibelleContainingIgnoreCaseOrCodeProfilContainingIgnoreCase(query, query, pageable)
+    public Page<ProfilDTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+        return EntitySpecifications.findAll(profilRepository, FilterDefinitions.PROFIL, search, filters, pageable)
                 .map(mapper::toDto);
     }
 

@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import type { Page, PageRequest } from "@/types/common";
 import type { CrudService } from "@/features/administration/shared/types/crud-service.types";
+import { buildListParams } from "@/features/administration/shared/services/buildListParams";
 import type { Utilisateur, UtilisateurInput } from "../types/user.types";
 import { siteService } from "@/features/administration/sites/services/site.service";
 
@@ -39,18 +40,9 @@ async function fetchSites(
 
 export const userService = {
   async list(params: PageRequest): Promise<Page<Utilisateur>> {
-    const { filters, ...rest } = params;
-    const queryParams: Record<string, unknown> = { ...rest };
-
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
-          queryParams[key] = value;
-        }
-      });
-    }
-
-    const { data } = await apiClient.get<Page<RawUser>>("/users", { params: queryParams });
+    const { data } = await apiClient.get<Page<RawUser>>("/users", {
+      params: buildListParams(params),
+    });
     const allSites = await siteService.listAll();
     const siteLabels = new Map(allSites.map((s) => [s.idSite, s.nomSite]));
     const content = await Promise.all(

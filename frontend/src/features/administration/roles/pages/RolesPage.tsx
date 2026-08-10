@@ -8,6 +8,7 @@ import type { Role } from "../types/role.types";
 import type { RoleFormValues } from "../validation/role.validation";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +19,7 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 const PERMISSION_CODE = "ADMIN_ROLES";
 
 export function RolesPage() {
-  const { page, setPage, search, setSearch, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useRoles();
+  const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useRoles();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const [deleting, setDeleting] = useState<Role | null>(null);
@@ -40,14 +41,20 @@ export function RolesPage() {
         title="Rôles"
         description="Gérez les rôles applicatifs attribuables aux utilisateurs via les groupes."
         breadcrumb={[{ label: "Administration" }, { label: "Rôles" }]}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher un rôle..."
         actions={
           <RequirePermission code={PERMISSION_CODE} action="ajout">
             <Button leftIcon={<FiPlus size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>Nouveau rôle</Button>
           </RequirePermission>
         }
+      />
+      <SearchToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un rôle..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={[]}
       />
       <PageCard>
         <DataTable

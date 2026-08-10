@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import type { Page, PageRequest } from "@/types/common";
 import type { CrudService } from "@/features/administration/shared/types/crud-service.types";
+import { buildListParams } from "@/features/administration/shared/services/buildListParams";
 import type { Site, SiteInput } from "../types/site.types";
 
 // Forme brute renvoyée par le backend (SiteDTO : sans le libellé du parent résolu).
@@ -16,9 +17,8 @@ function enrichParents(sites: RawSite[]): Site[] {
 
 export const siteService = {
   async list(params: PageRequest): Promise<Page<Site>> {
-    const { filters, ...rest } = params;
     const [{ data }, all] = await Promise.all([
-      apiClient.get<Page<RawSite>>("/sites", { params: { ...rest, ...filters } }),
+      apiClient.get<Page<RawSite>>("/sites", { params: buildListParams(params) }),
       apiClient.get<RawSite[]>("/sites/all").then((r) => r.data),
     ]);
     const byId = new Map(all.map((s) => [s.idSite, s]));

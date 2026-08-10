@@ -8,6 +8,7 @@ import type { Site } from "../types/site.types";
 import type { SiteFormValues } from "../validation/site.validation";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +20,7 @@ const PERMISSION_CODE = "ADMIN_SITES";
 
 export function SitesPage() {
   const {
-    page, setPage, search, setSearch, sortKey, sortDirection, onSortChange,
+    page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange,
     listQuery, createMutation, updateMutation, removeMutation,
   } = useSites();
 
@@ -46,9 +47,6 @@ export function SitesPage() {
         title="Sites"
         description="Gérez les sites et dépôts, ainsi que leur hiérarchie."
         breadcrumb={[{ label: "Administration" }, { label: "Sites" }]}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher un site..."
         actions={
           <RequirePermission code={PERMISSION_CODE} action="ajout">
             <Button leftIcon={<FiPlus size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>
@@ -56,6 +54,15 @@ export function SitesPage() {
             </Button>
           </RequirePermission>
         }
+      />
+      <SearchToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un site..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={[]}
       />
       <PageCard>
         <DataTable

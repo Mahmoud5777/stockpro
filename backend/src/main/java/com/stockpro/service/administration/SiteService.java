@@ -6,12 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface SiteService {
     List<SiteDTO> findAll();
     Page<SiteDTO> findAll(Pageable pageable);
-    Page<SiteDTO> search(String query, Pageable pageable);
+    Page<SiteDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
     SiteDTO findById(UUID id);
     List<SiteDTO> findRacines();
     List<SiteDTO> findEnfants(UUID idSiteParent);

@@ -8,18 +8,34 @@ import type { Fonctionnalite } from "../types/fonctionnalite.types";
 import type { FonctionnaliteFormValues } from "../validation/fonctionnalite.validation";
 import { CrudPageHeader } from "@/features/administration/shared/components/CrudPageHeader";
 import { PageCard } from "@/features/administration/shared/components/PageCard";
+import { SearchToolbar } from "@/features/administration/shared/components/SearchToolbar";
+import type { FilterConfig } from "@/features/administration/shared/types/filter-config.types";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RequirePermission } from "@/features/auth/components/RequirePermission";
+import { applicationService } from "@/features/administration/shared/services/application.service";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 const PERMISSION_CODE = "ADMIN_FONCTIONNALITES";
 
+const FILTERS_CONFIG: FilterConfig[] = [
+  {
+    key: "applicationId",
+    label: "Application",
+    type: "select",
+    fetchOptions: async () => {
+      const apps = await applicationService.listAll();
+      return apps.map((a) => ({ value: a.idApp, label: a.nomApp }));
+    },
+    className: "w-72",
+  },
+];
+
 export function FonctionnalitesPage() {
-  const { page, setPage, search, setSearch, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useFonctionnalites();
+  const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery, createMutation, updateMutation, removeMutation } = useFonctionnalites();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Fonctionnalite | null>(null);
   const [deleting, setDeleting] = useState<Fonctionnalite | null>(null);
@@ -44,14 +60,20 @@ export function FonctionnalitesPage() {
         title="Fonctionnalités"
         description="Définissez les fonctionnalités de l'application et leur menu associé."
         breadcrumb={[{ label: "Administration" }, { label: "Fonctionnalités" }]}
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Rechercher une fonctionnalité..."
         actions={
           <RequirePermission code={PERMISSION_CODE} action="ajout">
             <Button leftIcon={<FiPlus size={16} />} onClick={() => { setEditing(null); setFormOpen(true); }}>Nouvelle fonctionnalité</Button>
           </RequirePermission>
         }
+      />
+      <SearchToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher une fonctionnalité..."
+        filters={filters}
+        updateFilters={updateFilters}
+        resetFilters={resetFilters}
+        filtersConfig={FILTERS_CONFIG}
       />
       <PageCard>
         <DataTable
