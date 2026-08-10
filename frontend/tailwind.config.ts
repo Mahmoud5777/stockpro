@@ -39,10 +39,33 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "gradient-pan": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "blob-a": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(48px, -56px) scale(1.12)" },
+          "66%": { transform: "translate(-36px, 40px) scale(0.92)" },
+        },
+        "blob-b": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "40%": { transform: "translate(-64px, 36px) scale(1.18)" },
+          "70%": { transform: "translate(52px, -28px) scale(0.9)" },
+        },
+        "blob-c": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "35%": { transform: "translate(40px, 60px) scale(1.08)" },
+          "75%": { transform: "translate(-48px, -36px) scale(0.94)" },
+        },
       },
       animation: {
         "fade-in": "fade-in .2s ease-out",
         "slide-up": "slide-up .25s ease-out",
+        "gradient-pan": "gradient-pan 14s ease-in-out infinite",
+        "blob-a": "blob-a 22s ease-in-out infinite",
+        "blob-b": "blob-b 27s ease-in-out infinite",
+        "blob-c": "blob-c 24s ease-in-out infinite",
       },
     },
   },
