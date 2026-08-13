@@ -1,4 +1,4 @@
-import type { IconType } from "react-icons";
+import type { ComponentType } from "react";
 import {
   FiGrid,
   FiUsers,
@@ -21,7 +21,7 @@ import { ROUTES } from "@/lib/constants";
 export interface MenuItem {
   label: string;
   href?: string;
-  icon: IconType;
+  icon: ComponentType<any>;
   /** Code de la fonctionnalité côté backend, utilisé pour le filtrage des droits. Null = toujours visible (ex: Dashboard). */
   code: string | null;
   children?: MenuItem[];

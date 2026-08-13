@@ -36,7 +36,7 @@ function getCommonProps({ size = 24, color = "currentColor", strokeWidth = 2, cl
 
 function createIcon(displayName: string, render: (props: IconProps) => ReactNode, viewBox = "0 0 24 24") {
   const Component = forwardRef<SVGSVGElement, IconProps>((props, ref) => (
-    <motion.svg ref={ref} {...getCommonProps({ ...props, viewBox, children: render(props) })} />
+    <motion.svg ref={ref} {...(getCommonProps({ ...props, viewBox, children: render(props) }) as unknown as React.ComponentProps<typeof motion.svg>)} />
   ));
   Component.displayName = displayName;
   return Component;
