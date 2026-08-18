@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FiSearch, FiPlus, FiX } from "react-icons/fi";
+import { FiSearch, FiPlus, FiX, FiDownload } from "react-icons/fi";
 import { Select, Button } from "@/components/ui";
+import { RequirePermission } from "@/features/auth/components/RequirePermission";
 import type { SelectOption } from "@/types/common";
 import type { FilterConfig } from "../types/filter-config.types";
 import { cn } from "@/utils/cn";
@@ -16,6 +17,11 @@ export interface SearchToolbarProps {
   updateFilters: (patch: Record<string, string | boolean | undefined>) => void;
   resetFilters: () => void;
   filtersConfig: FilterConfig[];
+  /** Code de fonctionnalité (ex: "ADMIN_UTILISATEURS") requis pour afficher le bouton d'export. */
+  permissionCode?: string;
+  /** Déclenche l'export Excel des résultats de la recherche (bouton vert à côté de la barre). */
+  onExport?: () => void;
+  isExporting?: boolean;
 }
 
 function getOptions(config: FilterConfig): SelectOption[] {
@@ -42,6 +48,9 @@ export function SearchToolbar({
   updateFilters,
   resetFilters,
   filtersConfig,
+  permissionCode,
+  onExport,
+  isExporting,
 }: SearchToolbarProps) {
   const [localSearch, setLocalSearch] = useState(search);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
@@ -86,15 +95,32 @@ export function SearchToolbar({
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-900">
-      <div className="relative">
-        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-        <input
-          type="text"
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          placeholder={searchPlaceholder}
-          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-brand-500"
-        />
+      <div className="flex items-stretch gap-3">
+        <div className="relative flex-1">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-[42px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-brand-500"
+          />
+        </div>
+
+        {onExport && (
+          <RequirePermission code={permissionCode ?? ""} action="export">
+            <Button
+              variant="success"
+              size="md"
+              className="h-[42px] shrink-0"
+              onClick={onExport}
+              isLoading={isExporting}
+              leftIcon={<FiDownload size={16} />}
+            >
+              Export Excel
+            </Button>
+          </RequirePermission>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">

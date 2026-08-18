@@ -13,6 +13,7 @@ public interface RoleService {
     List<RoleDTO> findAll();
     Page<RoleDTO> findAll(Pageable pageable);
     Page<RoleDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<RoleDTO> findAllForExport(String search, Map<String, String> filters);
     RoleDTO findById(UUID id);
     RoleDTO create(RoleDTO dto);
     RoleDTO update(UUID id, RoleDTO dto);

@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RequirePermission } from "@/features/auth/components/RequirePermission";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { downloadSpreadsheet } from "@/lib/download";
+import { toast } from "@/store/toast.store";
 
 const PERMISSION_CODE = "ADMIN_GROUPES";
 
@@ -24,6 +26,27 @@ export function GroupesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Groupe | null>(null);
   const [deleting, setDeleting] = useState<Groupe | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadSpreadsheet(
+        "/groupes/export",
+        {
+          search,
+          filters,
+          sort: sortKey ? `${sortKey},${sortDirection}` : undefined,
+        },
+        "groupes.xlsx"
+      );
+      toast({ title: "Export réussi", description: "Le fichier Excel a été téléchargé.", variant: "success" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter les groupes.", variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   function handleSubmit(values: GroupeFormValues) {
     if (editing) updateMutation.mutate({ id: editing.idGr, input: values }, { onSuccess: () => setFormOpen(false) });
@@ -57,6 +80,9 @@ export function GroupesPage() {
         updateFilters={updateFilters}
         resetFilters={resetFilters}
         filtersConfig={[]}
+        permissionCode={PERMISSION_CODE}
+        onExport={handleExport}
+        isExporting={isExporting}
       />
       <PageCard>
         <DataTable

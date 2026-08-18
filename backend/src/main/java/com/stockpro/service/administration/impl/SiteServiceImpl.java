@@ -51,6 +51,15 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SiteDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(siteRepository, FilterDefinitions.SITE, search, filters)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public SiteDTO findById(UUID id) {
         return mapper.toDto(getEntity(id));
     }

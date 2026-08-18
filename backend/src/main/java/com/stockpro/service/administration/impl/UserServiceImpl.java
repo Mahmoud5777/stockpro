@@ -52,6 +52,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<UserDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(userRepository, FilterDefinitions.UTILISATEUR, search, filters)
+                .stream()
+                .map(userMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public UserDTO findById(UUID id) {
         return userMapper.toDto(userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id)));

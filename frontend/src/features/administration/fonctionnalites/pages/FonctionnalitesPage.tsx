@@ -18,6 +18,8 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RequirePermission } from "@/features/auth/components/RequirePermission";
 import { applicationService } from "@/features/administration/shared/services/application.service";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { downloadSpreadsheet } from "@/lib/download";
+import { toast } from "@/store/toast.store";
 
 const PERMISSION_CODE = "ADMIN_FONCTIONNALITES";
 
@@ -39,6 +41,27 @@ export function FonctionnalitesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Fonctionnalite | null>(null);
   const [deleting, setDeleting] = useState<Fonctionnalite | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadSpreadsheet(
+        "/fonctionnalites/export",
+        {
+          search,
+          filters,
+          sort: sortKey ? `${sortKey},${sortDirection}` : undefined,
+        },
+        "fonctionnalites.xlsx"
+      );
+      toast({ title: "Export réussi", description: "Le fichier Excel a été téléchargé.", variant: "success" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter les fonctionnalités.", variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   function handleSubmit(values: FonctionnaliteFormValues) {
     const input = { ...values, idFoncMere: values.idFoncMere || null };
@@ -74,6 +97,9 @@ export function FonctionnalitesPage() {
         updateFilters={updateFilters}
         resetFilters={resetFilters}
         filtersConfig={FILTERS_CONFIG}
+        permissionCode={PERMISSION_CODE}
+        onExport={handleExport}
+        isExporting={isExporting}
       />
       <PageCard>
         <DataTable

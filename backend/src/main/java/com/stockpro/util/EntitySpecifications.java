@@ -10,6 +10,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -47,6 +48,34 @@ public final class EntitySpecifications {
             return repository.findAll(pageable);
         }
         return repository.findAll(spec, pageable);
+    }
+
+    /**
+     * Variante non paginée (utilisée par les exports Excel) : retourne la liste complète
+     * des entités correspondant à la recherche + filtres, dans l'ordre naturel.
+     */
+    public static <T, R extends JpaRepository<T, ?> & JpaSpecificationExecutor<T>> List<T> findAllList(
+            R repository,
+            FilterDefinition definition,
+            String search,
+            Map<String, String> filters) {
+        return findAllList(repository, definition, search, filters, Sort.unsorted());
+    }
+
+    /**
+     * Variante non paginée avec tri explicite (ex: journal d'audit trié par date).
+     */
+    public static <T, R extends JpaRepository<T, ?> & JpaSpecificationExecutor<T>> List<T> findAllList(
+            R repository,
+            FilterDefinition definition,
+            String search,
+            Map<String, String> filters,
+            Sort sort) {
+        Specification<T> spec = build(definition, search, filters);
+        if (spec == null) {
+            return repository.findAll(sort);
+        }
+        return repository.findAll(spec, sort);
     }
 
     /**

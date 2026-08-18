@@ -13,6 +13,7 @@ public interface ProfilService {
     List<ProfilDTO> findAll();
     Page<ProfilDTO> findAll(Pageable pageable);
     Page<ProfilDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<ProfilDTO> findAllForExport(String search, Map<String, String> filters);
     ProfilDTO findById(UUID id);
     ProfilDTO create(ProfilDTO dto);
     ProfilDTO update(UUID id, ProfilDTO dto);

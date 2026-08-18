@@ -4,7 +4,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 import { FiLoader } from "react-icons/fi";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "success";
 type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,6 +26,8 @@ const variantClasses: Record<Variant, string> = {
     "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-slate-400",
   danger:
     "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 disabled:bg-red-300",
+  success:
+    "bg-[#217346] text-white hover:bg-[#1a5c38] focus-visible:ring-green-500 disabled:bg-green-300",
 };
 
 const sizeClasses: Record<Size, string> = {

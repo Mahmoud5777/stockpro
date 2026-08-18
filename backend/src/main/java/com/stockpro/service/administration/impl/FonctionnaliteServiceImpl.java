@@ -54,6 +54,15 @@ public class FonctionnaliteServiceImpl implements FonctionnaliteService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<FonctionnaliteDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(fonctionnaliteRepository, FilterDefinitions.FONCTIONNALITE, search, filters)
+                .stream()
+                .map(fonctionnaliteMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public FonctionnaliteDTO findById(UUID id) {
         return fonctionnaliteMapper.toDto(findEntityById(id));
     }

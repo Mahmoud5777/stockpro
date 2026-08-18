@@ -51,6 +51,15 @@ public class GroupeServiceImpl implements GroupeService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<GroupeDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(groupeRepository, FilterDefinitions.GROUPE, search, filters)
+                .stream()
+                .map(groupeMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public GroupeDTO findById(UUID id) {
         return groupeMapper.toDto(findEntityById(id));
     }

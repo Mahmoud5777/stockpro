@@ -3,6 +3,8 @@ package com.stockpro.controller.administration;
 import com.stockpro.dto.administration.FonctionnaliteDTO;
 import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.service.administration.FonctionnaliteService;
+import com.stockpro.util.ExcelExporter;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,27 @@ public class FonctionnaliteController {
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
         Page<FonctionnaliteDTO> page = fonctionnaliteService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les fonctionnalités (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<FonctionnaliteDTO> fonctionnalites = fonctionnaliteService.findAllForExport(search, filters);
+        List<Object[]> rows = fonctionnalites.stream()
+                .map(f -> new Object[]{
+                        f.getCodeFonc(),
+                        f.getLibelle(),
+                        f.getDescription(),
+                        f.getUrl(),
+                        f.getActif(),
+                        f.getOrderAffichage()
+                })
+                .toList();
+        return ExcelExporter.asResponse("fonctionnalites.xlsx", "Fonctionnalités",
+                new String[]{"Code", "Libellé", "Description", "URL", "Actif", "Ordre"}, rows);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_FONCTIONNALITES', 'CONSULTATION')")

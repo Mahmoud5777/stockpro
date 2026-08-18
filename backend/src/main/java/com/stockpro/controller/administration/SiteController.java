@@ -3,6 +3,7 @@ package com.stockpro.controller.administration;
 import com.stockpro.dto.administration.SiteDTO;
 import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.service.administration.SiteService;
+import com.stockpro.util.ExcelExporter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,20 @@ public class SiteController {
             @PageableDefault(size = 20, sort = "nomSite") Pageable pageable) {
         Page<SiteDTO> page = siteService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les sites (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<SiteDTO> sites = siteService.findAllForExport(search, filters);
+        List<Object[]> rows = sites.stream()
+                .map(s -> new Object[]{s.getCodeSite(), s.getNomSite(), s.getDescription(), s.getAddress()})
+                .toList();
+        return ExcelExporter.asResponse("sites.xlsx", "Sites",
+                new String[]{"Code", "Nom", "Description", "Adresse"}, rows);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_SITES', 'CONSULTATION')")

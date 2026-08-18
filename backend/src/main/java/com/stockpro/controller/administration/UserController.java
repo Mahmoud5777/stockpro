@@ -5,6 +5,8 @@ import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.entity.administration.User;
 import com.stockpro.mapper.administration.UserMapper;
 import com.stockpro.service.administration.UserService;
+import com.stockpro.util.ExcelExporter;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,6 +41,27 @@ public class UserController {
 
         Page<UserDTO> page = userService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les utilisateurs (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<UserDTO> users = userService.findAllForExport(search, filters);
+        List<Object[]> rows = users.stream()
+                .map(u -> new Object[]{
+                        u.getNomComplet(),
+                        u.getLogin(),
+                        u.getEmail(),
+                        u.getTelephone(),
+                        u.getEtatCompte() != null && u.getEtatCompte() ? "Actif" : "Inactif",
+                        u.getDateCreation()
+                })
+                .toList();
+        return ExcelExporter.asResponse("utilisateurs.xlsx", "Utilisateurs",
+                new String[]{"Nom complet", "Login", "Email", "Téléphone", "État", "Date création"}, rows);
     }
 
     @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_UTILISATEURS', 'CONSULTATION')")

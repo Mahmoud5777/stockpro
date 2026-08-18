@@ -51,6 +51,15 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<RoleDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(roleRepository, FilterDefinitions.ROLE, search, filters)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public RoleDTO findById(UUID id) {
         return mapper.toDto(getEntity(id));
     }

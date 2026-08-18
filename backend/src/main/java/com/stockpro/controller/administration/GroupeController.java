@@ -3,6 +3,7 @@ package com.stockpro.controller.administration;
 import com.stockpro.dto.administration.GroupeDTO;
 import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.service.administration.GroupeService;
+import com.stockpro.util.ExcelExporter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,20 @@ public class GroupeController {
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
         Page<GroupeDTO> page = groupeService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les groupes (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_GROUPES', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<GroupeDTO> groupes = groupeService.findAllForExport(search, filters);
+        List<Object[]> rows = groupes.stream()
+                .map(g -> new Object[]{g.getCodeGroupe(), g.getLibelle(), g.getDescription()})
+                .toList();
+        return ExcelExporter.asResponse("groupes.xlsx", "Groupes",
+                new String[]{"Code", "Libellé", "Description"}, rows);
     }
 
     @Operation(summary = "Liste complète non paginée (pour les selects/multi-selects)")

@@ -3,6 +3,7 @@ package com.stockpro.controller.administration;
 import com.stockpro.dto.administration.ProfilDTO;
 import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.service.administration.ProfilService;
+import com.stockpro.util.ExcelExporter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,20 @@ public class ProfilController {
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
         Page<ProfilDTO> page = profilService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les profils (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_PROFILS', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<ProfilDTO> profils = profilService.findAllForExport(search, filters);
+        List<Object[]> rows = profils.stream()
+                .map(p -> new Object[]{p.getCodeProfil(), p.getLibelle(), p.getDescription()})
+                .toList();
+        return ExcelExporter.asResponse("profils.xlsx", "Profils",
+                new String[]{"Code", "Libellé", "Description"}, rows);
     }
 
     @Operation(summary = "Liste complète non paginée (pour les selects/multi-selects)")

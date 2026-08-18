@@ -15,6 +15,7 @@ public interface UserService {
 
     // Recherche unifiée (texte + filtres) pilotée par FilterDefinitions.UTILISATEUR
     Page<UserDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<UserDTO> findAllForExport(String search, Map<String, String> filters);
 
     UserDTO findById(UUID id);
     UserDTO findByLogin(String login);

@@ -313,6 +313,14 @@ const FiTrash2 = createIcon("FiTrash2", () => (
 
 const FiPlus = createIcon("FiPlus", () => <path d="M12 5v14M5 12h14" />);
 
+const FiDownload = createIcon("FiDownload", () => (
+  <>
+    <path d="M5 21h14" />
+    <path d="M12 3v12" />
+    <path d="m7 10 5 5 5-5" />
+  </>
+));
+
 const FiUserPlus = createIcon("FiUserPlus", () => (
   <>
     <circle cx="9" cy="8" r="3" />
@@ -376,6 +384,7 @@ export {
   FiChevronsLeft,
   FiChevronsRight,
   FiClipboard,
+  FiDownload,
   FiEdit2,
   FiFileText,
   FiGrid,

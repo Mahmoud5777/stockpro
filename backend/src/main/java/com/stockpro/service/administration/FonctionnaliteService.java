@@ -13,6 +13,7 @@ public interface FonctionnaliteService {
     List<FonctionnaliteDTO> findAll();
     Page<FonctionnaliteDTO> findAll(Pageable pageable);
     Page<FonctionnaliteDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<FonctionnaliteDTO> findAllForExport(String search, Map<String, String> filters);
     FonctionnaliteDTO findById(UUID id);
     List<FonctionnaliteDTO> findByApplication(UUID idApp);
     List<FonctionnaliteDTO> findRacines();

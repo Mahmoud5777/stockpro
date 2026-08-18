@@ -3,6 +3,7 @@ package com.stockpro.controller.administration;
 import com.stockpro.dto.administration.RoleDTO;
 import com.stockpro.dto.common.PageResponseDTO;
 import com.stockpro.service.administration.RoleService;
+import com.stockpro.util.ExcelExporter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,20 @@ public class RoleController {
             @PageableDefault(size = 20, sort = "libelle") Pageable pageable) {
         Page<RoleDTO> page = roleService.findAll(search, filters, pageable);
         return ResponseEntity.ok(PageResponseDTO.of(page));
+    }
+
+    @Operation(summary = "Exporter les rôles (recherche + filtres) en Excel (.xlsx)")
+    @PreAuthorize("@accessGuard.can(authentication, 'ADMIN_ROLES', 'EXPORT')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String search,
+            @RequestParam Map<String, String> filters) {
+        List<RoleDTO> roles = roleService.findAllForExport(search, filters);
+        List<Object[]> rows = roles.stream()
+                .map(r -> new Object[]{r.getCodeRole(), r.getLibelle(), r.getDescription()})
+                .toList();
+        return ExcelExporter.asResponse("roles.xlsx", "Rôles",
+                new String[]{"Code", "Libellé", "Description"}, rows);
     }
 
     @Operation(summary = "Liste complète non paginée (pour les selects/multi-selects)")

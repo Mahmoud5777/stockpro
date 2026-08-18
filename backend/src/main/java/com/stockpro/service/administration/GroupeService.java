@@ -13,6 +13,7 @@ public interface GroupeService {
     List<GroupeDTO> findAll();
     Page<GroupeDTO> findAll(Pageable pageable);
     Page<GroupeDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<GroupeDTO> findAllForExport(String search, Map<String, String> filters);
     GroupeDTO findById(UUID id);
     GroupeDTO create(GroupeDTO groupeDTO);
     GroupeDTO update(UUID id, GroupeDTO groupeDTO);

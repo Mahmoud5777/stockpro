@@ -51,6 +51,15 @@ public class ProfilServiceImpl implements ProfilService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ProfilDTO> findAllForExport(String search, Map<String, String> filters) {
+        return EntitySpecifications.findAllList(profilRepository, FilterDefinitions.PROFIL, search, filters)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ProfilDTO findById(UUID id) {
         return mapper.toDto(getEntity(id));
     }

@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RequirePermission } from "@/features/auth/components/RequirePermission";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { downloadSpreadsheet } from "@/lib/download";
+import { toast } from "@/store/toast.store";
 
 const PERMISSION_CODE = "ADMIN_ROLES";
 
@@ -23,6 +25,27 @@ export function RolesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const [deleting, setDeleting] = useState<Role | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadSpreadsheet(
+        "/roles/export",
+        {
+          search,
+          filters,
+          sort: sortKey ? `${sortKey},${sortDirection}` : undefined,
+        },
+        "roles.xlsx"
+      );
+      toast({ title: "Export réussi", description: "Le fichier Excel a été téléchargé.", variant: "success" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter les rôles.", variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   function handleSubmit(values: RoleFormValues) {
     if (editing) updateMutation.mutate({ id: editing.idRl, input: values }, { onSuccess: () => setFormOpen(false) });
@@ -55,6 +78,9 @@ export function RolesPage() {
         updateFilters={updateFilters}
         resetFilters={resetFilters}
         filtersConfig={[]}
+        permissionCode={PERMISSION_CODE}
+        onExport={handleExport}
+        isExporting={isExporting}
       />
       <PageCard>
         <DataTable

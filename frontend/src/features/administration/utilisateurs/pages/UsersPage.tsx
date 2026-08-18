@@ -12,6 +12,8 @@ import { userService } from "@/features/administration/utilisateurs/services/use
 import { siteService } from "@/features/administration/sites/services/site.service";
 import { RequirePermission } from "@/features/auth/components/RequirePermission";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { downloadSpreadsheet } from "@/lib/download";
+import { toast } from "@/store/toast.store";
 import { UserFormModal } from "@/features/administration/utilisateurs/components/UserFormModal";
 import type { Utilisateur, UtilisateurInput } from "@/features/administration/utilisateurs/types/user.types";
 
@@ -60,6 +62,27 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Utilisateur | null>(null);
   const [deleting, setDeleting] = useState<Utilisateur | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadSpreadsheet(
+        "/users/export",
+        {
+          search,
+          filters,
+          sort: sortKey ? `${sortKey},${sortDirection}` : undefined,
+        },
+        "utilisateurs.xlsx"
+      );
+      toast({ title: "Export réussi", description: "Le fichier Excel a été téléchargé.", variant: "success" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter les utilisateurs.", variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleSubmit = (data: UtilisateurInput) => {
     if (editing) {
@@ -131,6 +154,9 @@ export function UsersPage() {
         updateFilters={updateFilters}
         resetFilters={resetFilters}
         filtersConfig={FILTERS_CONFIG}
+        permissionCode="ADMIN_UTILISATEURS"
+        onExport={handleExport}
+        isExporting={isExporting}
       />
 
       <PageCard>

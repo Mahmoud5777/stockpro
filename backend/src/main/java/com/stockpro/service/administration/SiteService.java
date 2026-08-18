@@ -13,6 +13,7 @@ public interface SiteService {
     List<SiteDTO> findAll();
     Page<SiteDTO> findAll(Pageable pageable);
     Page<SiteDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+    List<SiteDTO> findAllForExport(String search, Map<String, String> filters);
     SiteDTO findById(UUID id);
     List<SiteDTO> findRacines();
     List<SiteDTO> findEnfants(UUID idSiteParent);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { FiLogIn, FiLogOut, FiRefreshCw, FiActivity, FiXCircle } from "react-icons/fi";
 import { useAuditLogs } from "../hooks/useAuditLogs";
 import type { AuditLog, AuditActionType } from "../types/audit.types";
@@ -12,6 +13,8 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/utils/date";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { downloadSpreadsheet } from "@/lib/download";
+import { toast } from "@/store/toast.store";
 
 // Valeurs alignées sur l'enum backend AuditAction.java (voir audit.types.ts).
 const ACTION_CONFIG: Record<AuditActionType, { label: string; variant: "success" | "danger" | "neutral" | "brand" | "warning"; icon: typeof FiLogIn }> = {
@@ -44,6 +47,27 @@ const FILTERS_CONFIG: FilterConfig[] = [
  */
 export function AuditPage() {
   const { page, setPage, search, setSearch, filters, updateFilters, resetFilters, sortKey, sortDirection, onSortChange, listQuery } = useAuditLogs();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadSpreadsheet(
+        "/audit-logs/export",
+        {
+          search,
+          filters,
+          sort: sortKey ? `${sortKey},${sortDirection}` : undefined,
+        },
+        "audit-acces.xlsx"
+      );
+      toast({ title: "Export réussi", description: "Le fichier Excel a été téléchargé.", variant: "success" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter les logs d'accès.", variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const columns: DataTableColumn<AuditLog>[] = [
     { key: "dateAcces", label: "Date & heure", sortable: true, render: (row) => formatDate(row.dateAcces, true) },
@@ -95,6 +119,9 @@ export function AuditPage() {
         updateFilters={updateFilters}
         resetFilters={resetFilters}
         filtersConfig={FILTERS_CONFIG}
+        permissionCode="ADMIN_AUDIT"
+        onExport={handleExport}
+        isExporting={isExporting}
       />
       <PageCard>
         <DataTable
