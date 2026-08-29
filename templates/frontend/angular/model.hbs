@@ -1,0 +1,9 @@
+export interface {{entity.name}} {
+id: {{entity.tsType}};
+{{#each entity.fields}}
+{{name}}{{#unless required}}?{{/unless}}: {{tsType}};
+{{/each}}
+{{#each entity.manyToOne}}
+{{idFieldName}}{{#if idOptional}}?{{/if}}: {{tsType}};
+{{/each}}
+}

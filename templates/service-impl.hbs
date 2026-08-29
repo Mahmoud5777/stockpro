@@ -1,0 +1,133 @@
+package com.stockpro.service.{{entity.module}}.impl;
+
+import com.stockpro.dto.{{entity.module}}.{{entity.name}}DTO;
+import com.stockpro.entity.{{entity.module}}.{{entity.name}};
+{{#each entity.manyToOneImports}}
+import com.stockpro.entity.{{this.module}}.{{this.name}};
+{{/each}}
+import com.stockpro.exception.ResourceNotFoundException;
+import com.stockpro.mapper.{{entity.module}}.{{entity.name}}Mapper;
+import com.stockpro.repository.{{entity.module}}.{{entity.name}}Repository;
+{{#each entity.manyToOneRepoImports}}
+import com.stockpro.repository.{{this.module}}.{{this.name}}Repository;
+{{/each}}
+import com.stockpro.service.{{entity.module}}.{{entity.name}}Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Map;
+{{#if (eq entity.idType "UUID")}}
+import java.util.UUID;
+{{/if}}
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class {{entity.name}}ServiceImpl implements {{entity.name}}Service {
+
+private final {{entity.name}}Repository {{entity.repoVar}};
+private final {{entity.name}}Mapper mapper;
+{{#each entity.manyToOneRepoImports}}
+private final {{this.name}}Repository {{lowerFirst this.name}}Repository;
+{{/each}}
+
+{{#each entity.manyToOne}}
+private {{this.target}} resolve{{this.target}}({{this.targetIdType}} id) {
+    if (id == null) {
+        return null;
+    }
+    return {{lowerFirst this.target}}Repository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("{{this.target}}", id));
+}
+
+{{/each}}
+@Override
+@Transactional(readOnly = true)
+public List<{{entity.name}}DTO> findAll() {
+    return {{entity.repoVar}}.findAll().stream()
+    .map(mapper::toDto)
+    .collect(Collectors.toList());
+    }
+
+    {{#if entity.features.pagination}}
+    @Override
+    @Transactional(readOnly = true)
+    public Page<{{entity.name}}DTO> findAll(Pageable pageable) {
+        return {{entity.repoVar}}.findAll(pageable).map(mapper::toDto);
+        }
+        {{/if}}
+
+        {{#if entity.features.search}}
+        @Override
+        @Transactional(readOnly = true)
+        public Page<{{entity.name}}DTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
+                return {{entity.repoVar}}.findAll(pageable).map(mapper::toDto);
+                }
+                {{/if}}
+
+                {{#if entity.features.export}}
+                @Override
+                @Transactional(readOnly = true)
+                public List<{{entity.name}}DTO> findAllForExport(String search, Map<String, String> filters) {
+                        return {{entity.repoVar}}.findAll().stream()
+                        .map(mapper::toDto)
+                        .collect(Collectors.toList());
+                        }
+                        {{/if}}
+
+                        @Override
+                        @Transactional(readOnly = true)
+                        public {{entity.name}}DTO findById({{entity.idType}} id) {
+                        return mapper.toDto(getEntity(id));
+                        }
+
+                        @Override
+                        public {{entity.name}}DTO create({{entity.name}}DTO dto) {
+                        {{entity.name}} entity = mapper.toEntity(dto);
+                        entity.set{{entity.idFieldCap}}(null);
+                        {{#each entity.manyToOne}}
+                        {{#if this.nullable}}
+                        if (dto.get{{this.fieldNameCap}}Id() != null) {
+                            entity.set{{this.fieldNameCap}}(resolve{{this.target}}(dto.get{{this.fieldNameCap}}Id()));
+                        }
+                        {{else}}
+                        entity.set{{this.fieldNameCap}}(resolve{{this.target}}(dto.get{{this.fieldNameCap}}Id()));
+                        {{/if}}
+                        {{/each}}
+                        return mapper.toDto({{entity.repoVar}}.save(entity));
+                        }
+
+                        @Override
+                        public {{entity.name}}DTO update({{entity.idType}} id, {{entity.name}}DTO dto) {
+                        {{entity.name}} existing = getEntity(id);
+                        {{#each entity.updatableFields}}
+                        existing.set{{this.nameCap}}(dto.get{{this.nameCap}}());
+                        {{/each}}
+                        {{#each entity.manyToOne}}
+                        {{#if this.nullable}}
+                        if (dto.get{{this.fieldNameCap}}Id() != null) {
+                            existing.set{{this.fieldNameCap}}(resolve{{this.target}}(dto.get{{this.fieldNameCap}}Id()));
+                        }
+                        {{else}}
+                        existing.set{{this.fieldNameCap}}(resolve{{this.target}}(dto.get{{this.fieldNameCap}}Id()));
+                        {{/if}}
+                        {{/each}}
+                        return mapper.toDto({{entity.repoVar}}.save(existing));
+                        }
+
+                        @Override
+                        public void delete({{entity.idType}} id) {
+                        {{entity.repoVar}}.delete(getEntity(id));
+                        }
+
+                        private {{entity.name}} getEntity({{entity.idType}} id) {
+                        return {{entity.repoVar}}.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("{{entity.name}}", id));
+                        }
+                        }

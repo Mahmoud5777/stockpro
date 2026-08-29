@@ -1,0 +1,15 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+    <label for="nom">Nom</label>
+    <input id="nom" formControlName="nom" />
+    <small
+        *ngIf="form.controls.nom.touched && form.controls.nom.hasError('required')">Le nom du site est obligatoire</small>
+    <label for="code">Code</label>
+    <input id="code" formControlName="code" />
+    <small
+        *ngIf="form.controls.code.touched && form.controls.code.hasError('required')">Le code du site est obligatoire</small>
+    <label for="description">Description</label>
+    <input id="description" formControlName="description" />
+    <small
+        *ngIf="form.controls.description.touched && form.controls.description.hasError('required')"></small>
+    <button type="submit">Enregistrer</button>
+</form>

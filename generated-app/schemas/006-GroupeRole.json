@@ -1,0 +1,52 @@
+{
+  "entity": {
+    "module": "security",
+    "name": "GroupeRole",
+    "tableName": "GROUPE_ROLE",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "ID",
+    "idType": "UUID",
+    "repoVar": "groupRoleRepository",
+    "serviceVar": "groupRoleService",
+    "urlPath": "group-roles",
+    "tagLabel": "Group Roles",
+    "tagLabelLower": "group roles",
+    "permissionCode": "ADMIN_GROUP_ROLE",
+    "filterKey": "GROUP_ROLE",
+    "defaultSortField": "id",
+    "securityLevel": "medium",
+    "serviceDescription": "Association groupe-rôle",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "export": false,
+      "security": true,
+      "validation": true
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [
+      {
+        "target": "Group",
+        "fieldName": "group",
+        "joinColumn": "GROUP_ID",
+        "nullable": false,
+        "cascade": "PERSIST",
+        "orphanRemoval": false
+      },
+      {
+        "target": "Role",
+        "fieldName": "role",
+        "joinColumn": "ROLE_ID",
+        "nullable": false,
+        "cascade": "PERSIST",
+        "orphanRemoval": false
+      }
+    ],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}

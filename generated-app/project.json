@@ -1,0 +1,64 @@
+{
+  "targets": [
+    "backend",
+    "frontend"
+  ],
+  "appName": "StockPro",
+  "appType": "Web application",
+  "basePackage": "com.stockpro",
+  "outputDir": "generated-app",
+  "database": "postgresql",
+  "buildTool": "maven",
+  "javaVersion": "17",
+  "springBootVersion": "3.2.0",
+  "security": {
+    "level": "high",
+    "authenticationType": "jwt",
+    "methodSecurity": true,
+    "permissionPrefix": "ADMIN"
+  },
+  "features": {
+    "pagination": true,
+    "search": true,
+    "filtering": true,
+    "export": true,
+    "auditFields": true,
+    "softDelete": true,
+    "apiDocumentation": true
+  },
+  "frontend": {
+    "framework": "react",
+    "buildTool": "vite",
+    "uiLibrary": "mui",
+    "state": "tanstack-query",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "i18n": false,
+      "theming": true
+    }
+  },
+  "entityCount": 7,
+  "entityOrder": [
+    "User",
+    "S",
+    "Sz",
+    "Ze",
+    "Sd",
+    "Ezrefe",
+    "Erzr"
+  ],
+  "generationOrder": [
+    "User",
+    "S",
+    "Sz",
+    "Ze",
+    "Sd",
+    "Ezrefe",
+    "Erzr"
+  ],
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-08-27T22:27:07.370Z"
+}

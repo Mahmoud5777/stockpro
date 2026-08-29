@@ -1,0 +1,12 @@
+import { Routes } from '@angular/router';
+
+export const {{entity.name}}Routes: Routes = [
+{
+path: '{{entity.urlPath}}',
+loadComponent: () => import('./list/{{entity.kebabName}}-list.component').then((m) => m.{{entity.name}}ListComponent),
+},
+{
+path: '{{entity.urlPath}}/new',
+loadComponent: () => import('./form/{{entity.kebabName}}-form.component').then((m) => m.{{entity.name}}FormComponent),
+},
+];

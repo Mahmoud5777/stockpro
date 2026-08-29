@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "module": "administration",
+    "name": "Sz",
+    "tableName": "SZ",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "SZ_ID",
+    "idType": "UUID",
+    "repoVar": "szRepository",
+    "serviceVar": "szService",
+    "urlPath": "szs",
+    "tagLabel": "Szs",
+    "tagLabelLower": "szs",
+    "permissionCode": "ADMIN_SZ",
+    "filterKey": "SZ",
+    "defaultSortField": "id",
+    "securityLevel": "high",
+    "serviceDescription": "Sz management",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "security": true,
+      "validation": false
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}

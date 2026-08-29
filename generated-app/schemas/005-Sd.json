@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "module": "administration",
+    "name": "Sd",
+    "tableName": "SD",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "SD_ID",
+    "idType": "UUID",
+    "repoVar": "sdRepository",
+    "serviceVar": "sdService",
+    "urlPath": "sds",
+    "tagLabel": "Sds",
+    "tagLabelLower": "sds",
+    "permissionCode": "ADMIN_SD",
+    "filterKey": "SD",
+    "defaultSortField": "id",
+    "securityLevel": "high",
+    "serviceDescription": "Sd management",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "security": true,
+      "validation": false
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}

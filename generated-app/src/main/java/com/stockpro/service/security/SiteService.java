@@ -1,0 +1,21 @@
+package com.stockpro.service.security;
+
+import com.stockpro.dto.security.SiteDTO;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+public interface SiteService {
+List<SiteDTO> findAll();
+    Page<SiteDTO> findAll(Pageable pageable);
+        Page<SiteDTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+                List<SiteDTO> findAllForExport(String search, Map<String, String> filters);
+                        SiteDTO findById(UUID id);
+                        SiteDTO create(SiteDTO dto);
+                        SiteDTO update(UUID id, SiteDTO dto);
+                        void delete(UUID id);
+                        }

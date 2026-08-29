@@ -1,0 +1,19 @@
+<section *hasPermission="'ADMIN_GROUP_ROLE:consultation'" class="groupe-role-list">
+    <header>
+        <h1>Group Roles</h1>
+        <input type="search" [(ngModel)]="search" (keyup.enter)="searchItems()" placeholder="Rechercher" />
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let item of (data$ | async)?.content">
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</section>

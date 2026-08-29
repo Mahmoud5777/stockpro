@@ -1,0 +1,13 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+    {{#each entity.fields}}
+    <label for="{{name}}">{{nameCap}}</label>
+    <input id="{{name}}" formControlName="{{name}}" />
+    <small
+        *ngIf="form.controls.{{name}}.touched && form.controls.{{name}}.hasError('required')">{{errorMessage}}</small>
+    {{/each}}
+    {{#each entity.manyToOne}}
+    <label for="{{idFieldName}}">{{target}}</label>
+    <input id="{{idFieldName}}" formControlName="{{idFieldName}}" />
+    {{/each}}
+    <button type="submit">Enregistrer</button>
+</form>

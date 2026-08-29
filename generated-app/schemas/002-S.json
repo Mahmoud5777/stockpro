@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "module": "s",
+    "name": "S",
+    "tableName": "S",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "S_ID",
+    "idType": "UUID",
+    "repoVar": "sRepository",
+    "serviceVar": "sService",
+    "urlPath": "ss",
+    "tagLabel": "Ss",
+    "tagLabelLower": "ss",
+    "permissionCode": "ADMIN_S",
+    "filterKey": "S",
+    "defaultSortField": "id",
+    "securityLevel": "high",
+    "serviceDescription": "S management",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "security": true,
+      "validation": false
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}

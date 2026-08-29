@@ -1,0 +1,77 @@
+{
+  "entity": {
+    "module": "security",
+    "name": "Group",
+    "tableName": "GROUPS",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "ID",
+    "idType": "UUID",
+    "repoVar": "groupRepository",
+    "serviceVar": "groupService",
+    "urlPath": "groups",
+    "tagLabel": "Groupes",
+    "tagLabelLower": "groupes",
+    "permissionCode": "ADMIN_GROUPS",
+    "filterKey": "GROUP",
+    "defaultSortField": "nom",
+    "securityLevel": "high",
+    "serviceDescription": "Gestion des groupes",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "export": true,
+      "security": true,
+      "validation": true
+    },
+    "fields": [
+      {
+        "name": "nom",
+        "nameCap": "Nom",
+        "columnName": "NOM",
+        "javaType": "String",
+        "length": 50,
+        "required": true,
+        "errorMessage": "Le nom du groupe est obligatoire",
+        "unique": true
+      },
+      {
+        "name": "code",
+        "nameCap": "Code",
+        "columnName": "CODE",
+        "javaType": "String",
+        "length": 20,
+        "required": true,
+        "errorMessage": "Le code du groupe est obligatoire",
+        "unique": true
+      },
+      {
+        "name": "description",
+        "nameCap": "Description",
+        "columnName": "DESCRIPTION",
+        "javaType": "String",
+        "columnDefinition": "TEXT"
+      }
+    ],
+    "updatableFields": [
+      { "nameCap": "Description" }
+    ],
+    "manyToOne": [],
+    "oneToMany": [
+      {
+        "relationName": "AppartientGroupe",
+        "target": "GroupeRole",
+        "mappedBy": "group",
+        "fieldName": "groupRoles",
+        "orphanRemoval": true
+      }
+    ],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": [
+      { "nameCap": "Nom", "label": "Nom" },
+      { "nameCap": "Code", "label": "Code" },
+      { "nameCap": "Description", "label": "Description" }
+    ]
+  }
+}

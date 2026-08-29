@@ -1,0 +1,7 @@
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+@Component({ selector: 'app-sidebar', standalone: true, imports: [RouterLink], template: `<nav aria-label="Navigation">
+    <a routerLink="/">Accueil</a>{{#each entities}}<a routerLink="/{{kebabName}}">{{tagLabel}}</a>{{/each}}
+</nav>` })
+export class SidebarComponent {}

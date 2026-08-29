@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "module": "administration",
+    "name": "Erzr",
+    "tableName": "ERZR",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "ERZR_ID",
+    "idType": "UUID",
+    "repoVar": "erzrRepository",
+    "serviceVar": "erzrService",
+    "urlPath": "erzrs",
+    "tagLabel": "Erzrs",
+    "tagLabelLower": "erzrs",
+    "permissionCode": "ADMIN_ERZR",
+    "filterKey": "ERZR",
+    "defaultSortField": "id",
+    "securityLevel": "high",
+    "serviceDescription": "Erzr management",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "security": true,
+      "validation": false
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}
