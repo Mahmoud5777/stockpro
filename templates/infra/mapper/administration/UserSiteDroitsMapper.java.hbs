@@ -1,0 +1,56 @@
+package com.stockpro.mapper.administration;
+
+import com.stockpro.dto.administration.UserSiteDroitsDTO;
+import com.stockpro.entity.administration.*;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+public class UserSiteDroitsMapper {
+
+    public UserSiteDroitsDTO toDto(UserSiteDroits entity) {
+        if (entity == null) return null;
+        return UserSiteDroitsDTO.builder()
+                .idUserSiteDroit(entity.getIdUserSiteDroit())
+                .idUtilSite(entity.getUserSite() != null ? entity.getUserSite().getIdUtilSite() : null)
+                .idRl(entity.getRole() != null ? entity.getRole().getIdRl() : null)
+                .idPr(entity.getProfil() != null ? entity.getProfil().getIdPr() : null)
+                .idGr(entity.getGroupe() != null ? entity.getGroupe().getIdGr() : null)
+                .dateAffectation(entity.getDateAffectation())
+                .build();
+    }
+
+    public List<UserSiteDroitsDTO> toDto(List<UserSiteDroits> entities) {
+        if (entities == null) return null;
+        return entities.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public Page<UserSiteDroitsDTO> toDto(Page<UserSiteDroits> page) {
+        if (page == null) return null;
+        return page.map(this::toDto);
+    }
+
+    public UserSiteDroits toEntity(UserSiteDroitsDTO dto) {
+        if (dto == null) return null;
+        UserSiteDroits.UserSiteDroitsBuilder builder = UserSiteDroits.builder()
+                .idUserSiteDroit(dto.getIdUserSiteDroit())
+                .dateAffectation(dto.getDateAffectation());
+
+        if (dto.getIdUtilSite() != null) {
+            builder.userSite(UserSite.builder().idUtilSite(dto.getIdUtilSite()).build());
+        }
+        if (dto.getIdRl() != null) {
+            builder.role(Role.builder().idRl(dto.getIdRl()).build());
+        }
+        if (dto.getIdPr() != null) {
+            builder.profil(Profil.builder().idPr(dto.getIdPr()).build());
+        }
+        if (dto.getIdGr() != null) {
+            builder.groupe(Groupe.builder().idGr(dto.getIdGr()).build());
+        }
+        return builder.build();
+    }
+}

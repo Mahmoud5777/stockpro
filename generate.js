@@ -53,48 +53,124 @@ const LAYERS = [
   { template: "controller.hbs", outPath: (e) => `controller/${e.module}/${e.name}Controller.java` },
 ];
 
-const FRONTEND_LAYERS = [
-  { template: "frontend/angular/app/auth.service.hbs", outPath: () => "client/src/app/core/auth/auth.service.ts" },
-  { template: "frontend/angular/app/auth.guard.hbs", outPath: () => "client/src/app/core/auth/auth.guard.ts" },
-  { template: "frontend/angular/app/jwt.interceptor.hbs", outPath: () => "client/src/app/core/auth/jwt.interceptor.ts" },
-  { template: "frontend/angular/app/permission.guard.hbs", outPath: () => "client/src/app/core/permission/permission.guard.ts" },
-  { template: "frontend/angular/app/permission.directive.hbs", outPath: () => "client/src/app/core/permission/permission.directive.ts" },
-  { template: "frontend/angular/app/api.interceptor.hbs", outPath: () => "client/src/app/core/api/api.interceptor.ts" },
-  { template: "frontend/angular/app/layout.component.hbs", outPath: () => "client/src/app/layout/layout.component.ts" },
-  { template: "frontend/angular/app/sidebar.component.hbs", outPath: () => "client/src/app/layout/sidebar.component.ts" },
-  { template: "frontend/angular/app/app.routes.hbs", outPath: () => "client/src/app/app.routes.ts" },
-  { template: "frontend/angular/app/app.config.hbs", outPath: () => "client/src/app/app.config.ts" },
-  { template: "frontend/angular/app/environment.hbs", outPath: () => "client/src/environments/environment.ts" },
-  { template: "frontend/angular/app/environment.prod.hbs", outPath: () => "client/src/environments/environment.prod.ts" },
-  { template: "frontend/angular/app/i18n.fr.json.hbs", outPath: () => "client/src/assets/i18n/fr.json" },
+// Fixed infrastructure that makes the generated app bootable and secure: build file,
+// Spring Boot bootstrap, JWT security, exceptions, the auth domain (User/Role/RefreshToken)
+// and the /api/auth endpoints. These are emitted for every backend/"both" target.
+const CORE_LAYERS = [
+  { template: "infra/pom.xml.hbs", outPath: () => "pom.xml" },
+  { template: "infra/application.yml.hbs", outPath: () => "src/main/resources/application.yml" },
+  { template: "infra/StockproApplication.java.hbs", outPath: () => "src/main/java/com/stockpro/StockproApplication.java" },
+  { template: "infra/security/SecurityConfig.java.hbs", outPath: () => "src/main/java/com/stockpro/security/SecurityConfig.java" },
+  { template: "infra/security/JwtService.java.hbs", outPath: () => "src/main/java/com/stockpro/security/JwtService.java" },
+  { template: "infra/security/JwtAuthenticationFilter.java.hbs", outPath: () => "src/main/java/com/stockpro/security/JwtAuthenticationFilter.java" },
+  { template: "infra/security/UserDetailsServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/security/UserDetailsServiceImpl.java" },
+  { template: "infra/security/AccessGuard.java.hbs", outPath: () => "src/main/java/com/stockpro/security/AccessGuard.java" },
+  { template: "infra/security/DataInitializer.java.hbs", outPath: () => "src/main/java/com/stockpro/security/DataInitializer.java" },
+  { template: "infra/dto/common/PageResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/common/PageResponseDTO.java" },
+  { template: "infra/exception/GlobalExceptionHandler.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/GlobalExceptionHandler.java" },
+  { template: "infra/exception/ResourceNotFoundException.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/ResourceNotFoundException.java" },
+  { template: "infra/exception/TokenRefreshException.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/TokenRefreshException.java" },
+  { template: "infra/entity/administration/User.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/User.java" },
+  { template: "infra/entity/administration/Role.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Role.java" },
+  { template: "infra/entity/administration/RefreshToken.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/RefreshToken.java" },
+  { template: "infra/entity/administration/Site.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Site.java" },
+  { template: "infra/entity/administration/Groupe.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Groupe.java" },
+  { template: "infra/entity/administration/Profil.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Profil.java" },
+  { template: "infra/entity/administration/Application.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Application.java" },
+  { template: "infra/entity/administration/Fonctionnalite.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Fonctionnalite.java" },
+  { template: "infra/entity/administration/UserSite.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/UserSite.java" },
+  { template: "infra/entity/administration/UserSiteDroits.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/UserSiteDroits.java" },
+  { template: "infra/entity/administration/GroupeRole.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeRole.java" },
+  { template: "infra/entity/administration/GroupeProfil.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeProfil.java" },
+  { template: "infra/entity/administration/ProfilDroit.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/ProfilDroit.java" },
+  { template: "infra/repository/administration/UserRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserRepository.java" },
+  { template: "infra/repository/administration/RoleRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/RoleRepository.java" },
+  { template: "infra/repository/administration/RefreshTokenRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/RefreshTokenRepository.java" },
+  { template: "infra/repository/administration/SiteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/SiteRepository.java" },
+  { template: "infra/repository/administration/GroupeRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRepository.java" },
+  { template: "infra/repository/administration/ProfilRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ProfilRepository.java" },
+  { template: "infra/repository/administration/ApplicationRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ApplicationRepository.java" },
+  { template: "infra/repository/administration/FonctionnaliteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/FonctionnaliteRepository.java" },
+  { template: "infra/repository/administration/UserSiteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserSiteRepository.java" },
+  { template: "infra/repository/administration/UserSiteDroitsRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserSiteDroitsRepository.java" },
+  { template: "infra/repository/administration/GroupeRoleRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRoleRepository.java" },
+  { template: "infra/repository/administration/GroupeProfilRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeProfilRepository.java" },
+  { template: "infra/repository/administration/ProfilDroitRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ProfilDroitRepository.java" },
+  { template: "infra/service/administration/RefreshTokenService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/RefreshTokenService.java" },
+  { template: "infra/service/administration/impl/RefreshTokenServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/RefreshTokenServiceImpl.java" },
+  { template: "infra/dto/administration/UserDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserDTO.java" },
+  { template: "infra/dto/administration/RoleDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/RoleDTO.java" },
+  { template: "infra/dto/administration/SiteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/SiteDTO.java" },
+  { template: "infra/dto/administration/GroupeDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeDTO.java" },
+  { template: "infra/dto/administration/ProfilDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDTO.java" },
+  { template: "infra/dto/administration/ApplicationDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ApplicationDTO.java" },
+  { template: "infra/dto/administration/FonctionnaliteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/FonctionnaliteDTO.java" },
+  { template: "infra/dto/administration/UserSiteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDTO.java" },
+  { template: "infra/dto/administration/UserSiteDroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDroitsDTO.java" },
+  { template: "infra/dto/administration/GroupeRoleDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeRoleDTO.java" },
+  { template: "infra/dto/administration/GroupeProfilDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeProfilDTO.java" },
+  { template: "infra/dto/administration/ProfilDroitDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDroitDTO.java" },
+  { template: "infra/dto/auth/DroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/DroitsDTO.java" },
+  { template: "infra/dto/auth/FonctionnaliteAvecDroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/FonctionnaliteAvecDroitsDTO.java" },
+  { template: "infra/dto/auth/SiteAllegeDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/SiteAllegeDTO.java" },
+  { template: "infra/mapper/administration/UserMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserMapper.java" },
+  { template: "infra/mapper/administration/RoleMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/RoleMapper.java" },
+  { template: "infra/mapper/administration/SiteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/SiteMapper.java" },
+  { template: "infra/mapper/administration/GroupeMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeMapper.java" },
+  { template: "infra/mapper/administration/ProfilMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilMapper.java" },
+  { template: "infra/mapper/administration/ApplicationMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ApplicationMapper.java" },
+  { template: "infra/mapper/administration/FonctionnaliteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/FonctionnaliteMapper.java" },
+  { template: "infra/mapper/administration/UserSiteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteMapper.java" },
+  { template: "infra/mapper/administration/UserSiteDroitsMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteDroitsMapper.java" },
+  { template: "infra/mapper/administration/GroupeRoleMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeRoleMapper.java" },
+  { template: "infra/mapper/administration/GroupeProfilMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeProfilMapper.java" },
+  { template: "infra/mapper/administration/ProfilDroitMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilDroitMapper.java" },
+  { template: "infra/service/administration/UserService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserService.java" },
+  { template: "infra/service/administration/impl/UserServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserServiceImpl.java" },
+  { template: "infra/service/administration/RoleService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/RoleService.java" },
+  { template: "infra/service/administration/impl/RoleServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/RoleServiceImpl.java" },
+  { template: "infra/service/administration/SiteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/SiteService.java" },
+  { template: "infra/service/administration/impl/SiteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/SiteServiceImpl.java" },
+  { template: "infra/service/administration/GroupeService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeService.java" },
+  { template: "infra/service/administration/impl/GroupeServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeServiceImpl.java" },
+  { template: "infra/service/administration/ProfilService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ProfilService.java" },
+  { template: "infra/service/administration/impl/ProfilServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ProfilServiceImpl.java" },
+  { template: "infra/service/administration/ApplicationService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ApplicationService.java" },
+  { template: "infra/service/administration/impl/ApplicationServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ApplicationServiceImpl.java" },
+  { template: "infra/service/administration/FonctionnaliteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/FonctionnaliteService.java" },
+  { template: "infra/service/administration/impl/FonctionnaliteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/FonctionnaliteServiceImpl.java" },
+  { template: "infra/service/administration/UserSiteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteService.java" },
+  { template: "infra/service/administration/impl/UserSiteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserSiteServiceImpl.java" },
+  { template: "infra/service/administration/UserSiteDroitsService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteDroitsService.java" },
+  { template: "infra/service/administration/impl/UserSiteDroitsServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserSiteDroitsServiceImpl.java" },
+  { template: "infra/service/administration/GroupeRoleService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeRoleService.java" },
+  { template: "infra/service/administration/impl/GroupeRoleServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeRoleServiceImpl.java" },
+  { template: "infra/service/administration/GroupeProfilService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeProfilService.java" },
+  { template: "infra/service/administration/impl/GroupeProfilServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeProfilServiceImpl.java" },
+  { template: "infra/service/administration/ProfilDroitService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ProfilDroitService.java" },
+  { template: "infra/service/administration/impl/ProfilDroitServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ProfilDroitServiceImpl.java" },
+  { template: "infra/controller/administration/UserController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserController.java" },
+  { template: "infra/controller/administration/RoleController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/RoleController.java" },
+  { template: "infra/controller/administration/SiteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/SiteController.java" },
+  { template: "infra/controller/administration/GroupeController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeController.java" },
+  { template: "infra/controller/administration/ProfilController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ProfilController.java" },
+  { template: "infra/controller/administration/ApplicationController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ApplicationController.java" },
+  { template: "infra/controller/administration/FonctionnaliteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/FonctionnaliteController.java" },
+  { template: "infra/controller/administration/UserSiteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserSiteController.java" },
+  { template: "infra/controller/administration/UserSiteDroitsController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserSiteDroitsController.java" },
+  { template: "infra/controller/administration/GroupeRoleController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeRoleController.java" },
+  { template: "infra/controller/administration/GroupeProfilController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeProfilController.java" },
+  { template: "infra/controller/administration/ProfilDroitController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ProfilDroitController.java" },
+  { template: "infra/service/auth/AuthorizationService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/auth/AuthorizationService.java" },
+  { template: "infra/controller/auth/AuthController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/auth/AuthController.java" },
+  { template: "infra/dto/auth/LoginRequestDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/LoginRequestDTO.java" },
+  { template: "infra/dto/auth/AuthResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/AuthResponseDTO.java" },
+  { template: "infra/dto/auth/RefreshRequestDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/RefreshRequestDTO.java" },
+  { template: "infra/dto/auth/MeResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/MeResponseDTO.java" },
+  { template: "infra/util/ExcelExporter.java.hbs", outPath: () => "src/main/java/com/stockpro/util/ExcelExporter.java" },
 ];
 
-const REACT_FRONTEND_LAYERS = [
-  { template: "frontend/react/app/auth.service.hbs", outPath: () => "client/src/app/core/auth/auth.service.ts" },
-  { template: "frontend/react/app/auth.guard.hbs", outPath: () => "client/src/app/core/auth/auth.guard.ts" },
-  { template: "frontend/react/app/jwt.interceptor.hbs", outPath: () => "client/src/app/core/auth/jwt.interceptor.ts" },
-  { template: "frontend/react/app/permission.guard.hbs", outPath: () => "client/src/app/core/permission/permission.guard.ts" },
-  { template: "frontend/react/app/permission.directive.hbs", outPath: () => "client/src/app/core/permission/permission.directive.tsx" },
-  { template: "frontend/react/app/api.interceptor.hbs", outPath: () => "client/src/app/core/api/api.interceptor.ts" },
-  { template: "frontend/react/app/layout.hbs", outPath: () => "client/src/app/layout/Layout.tsx" },
-  { template: "frontend/react/app/sidebar.hbs", outPath: () => "client/src/app/layout/Sidebar.tsx" },
-  { template: "frontend/react/app/routes.hbs", outPath: () => "client/src/app/app.routes.tsx" },
-  { template: "frontend/react/app/environment.hbs", outPath: () => "client/src/environments/environment.ts" },
-  { template: "frontend/react/app/i18n.fr.json.hbs", outPath: () => "client/src/assets/i18n/fr.json" },
-];
-
-const ANGULAR_ENTITY_LAYERS = [
-  { template: "frontend/angular/model.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/${e.name}.model.ts` },
-  { template: "frontend/angular/service.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/${e.name}.service.ts` },
-  { template: "frontend/angular/list/list.component.ts.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/list/${e.kebabName}-list.component.ts` },
-  { template: "frontend/angular/list/list.component.html.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/list/${e.kebabName}-list.component.html` },
-  { template: "frontend/angular/list/list.component.scss.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/list/${e.kebabName}-list.component.scss` },
-  { template: "frontend/angular/form/form.component.ts.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/form/${e.kebabName}-form.component.ts` },
-  { template: "frontend/angular/form/form.component.html.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/form/${e.kebabName}-form.component.html` },
-  { template: "frontend/angular/routes.fragment.hbs", outPath: (e) => `client/src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.routes.ts` },
-];
-
-function loadTemplates(selectedLayers = [...LAYERS, ...FRONTEND_LAYERS, ...REACT_FRONTEND_LAYERS]) {
+function loadTemplates(selectedLayers = [...LAYERS, ...CORE_LAYERS]) {
   const compiled = {};
   for (const layer of selectedLayers) {
     const raw = fs.readFileSync(path.join(TEMPLATES_DIR, layer.template), "utf8");
@@ -200,6 +276,13 @@ function normalizeEntity(entity, source) {
     security: entity.features?.security !== false,
     validation: normalized.hasValidation,
   };
+
+  const usesList = normalized.features.pagination ||
+      normalized.features.export ||
+      normalized.securityOperations.consultation;
+  const usesMap = normalized.features.pagination || normalized.features.export;
+  normalized.needsListImport = Boolean(usesList);
+  normalized.needsMapImport = Boolean(usesMap);
 
   normalized.needsUuidImport =
     normalized.idType === "UUID" ||
@@ -311,46 +394,40 @@ function writeFile(filePath, content, options, report) {
   console.log(`  wrote           ${filePath}`);
 }
 
-function generateEntity(entity, compiled, outputRoot, options, report) {
+function generateEntity(entity, compiled, outputRoot, options, report, schemaOutputPaths) {
   const javaRoot = path.join(outputRoot, "src/main/java/com/stockpro");
   console.log(`\n${entity.name} (${entity.module})`);
   for (const layer of LAYERS) {
     const render = compiled[layer.template];
     const content = render({ entity });
     const outFile = path.join(javaRoot, layer.outPath(entity));
+    if (schemaOutputPaths) schemaOutputPaths.add(path.normalize(outFile));
     writeFile(outFile, content, options, report);
   }
 }
 
-function generateFrontendEntity(entity, compiled, outputRoot, options, report) {
-  console.log(`\n${entity.name} frontend (${entity.module})`);
-  for (const layer of ANGULAR_ENTITY_LAYERS) {
-    const content = compiled[layer.template]({ entity });
-    writeFile(path.join(outputRoot, layer.outPath(entity)), content, options, report);
-  }
-}
-
-function generateFrontend(entities, compiled, outputRoot, options, report, framework) {
-  const layers = framework === "react" ? REACT_FRONTEND_LAYERS : FRONTEND_LAYERS;
-  const frontend = {
-    securityOperations: {
-      low: { consultation: true, export: false, ajout: false, modification: false, suppression: false },
-      medium: { consultation: true, export: false, ajout: true, modification: true, suppression: false },
-      high: { consultation: true, export: true, ajout: true, modification: true, suppression: true },
+// Emits the fixed, non-entity infrastructure (auth/security/bootstrap) so the app boots.
+// Core layers that would overwrite a schema-driven entity on the same path are skipped,
+// so the schema definition of an entity always wins consistently (e.g. an admin entity
+// such as Role that the input schema also models).
+function generateCore(compiled, outputRoot, options, report, schemaOutputPaths) {
+  console.log("\nCore (auth / infrastructure)");
+  for (const layer of CORE_LAYERS) {
+    const render = compiled[layer.template];
+    if (!render) continue;
+    const content = render({});
+    const outFile = path.normalize(path.join(outputRoot, layer.outPath()));
+    if (schemaOutputPaths && schemaOutputPaths.has(outFile)) {
+      if (options.dryRun) {
+        report.planned += 1;
+        console.log(`  plan             ${outFile}`);
+      } else {
+        report.skipped += 1;
+        console.log(`  skip   (schema) ${outFile}`);
+      }
+      continue;
     }
-  };
-  const i18n = {};
-  for (const entity of entities) {
-    i18n[entity.kebabName] = entity.tagLabel;
-    for (const column of entity.exportColumns) {
-      i18n[`${entity.kebabName}.${lowerFirst(column.nameCap)}`] = column.label;
-    }
-  }
-  const context = { entities, entity: entities[0], apiUrl: "http://localhost:8080/api", i18n, frontend };
-  console.log(`\nFrontend app (${framework})`);
-  for (const layer of layers) {
-    const content = compiled[layer.template](context);
-    writeFile(path.join(outputRoot, layer.outPath(entities[0])), content, options, report);
+    writeFile(outFile, content, options, report);
   }
 }
 
@@ -362,9 +439,10 @@ Options:
   --dry-run   show planned files without writing them
   --verbose   print additional generation details
   --strict-relations  fail when a relation target is not in the input set
-  --targets=<backend|frontend|all>  select generated targets (default: backend)
-  --frontend=<angular|react>  frontend template set
-  --help      show this help`);
+  --help      show this help
+
+Frontend generation is handled separately by generate-frontend.js using a
+template pack (.spack). See tools/pack-frontend.js.`);
 }
 
 function main() {
@@ -377,9 +455,6 @@ function main() {
   const dryRun = args.includes("--dry-run");
   const verbose = args.includes("--verbose");
   const strictRelations = args.includes("--strict-relations");
-  const targetsArg = args.find((arg) => arg.startsWith("--targets="));
-  const targets = targetsArg ? targetsArg.slice("--targets=".length) : "backend";
-  const frontend = args.find((arg) => arg.startsWith("--frontend="))?.slice("--frontend=".length);
   const positional = args.filter((a) => !a.startsWith("--"));
   const [schemaInput, outputDir] = positional;
 
@@ -387,25 +462,14 @@ function main() {
     printHelp();
     process.exit(1);
   }
-  if (!["backend", "frontend", "all"].includes(targets)) {
-    console.error(`Error: unsupported targets '${targets}'`);
-    process.exit(1);
-  }
-  if (targets !== "backend" && !["angular", "react"].includes(frontend)) {
-    console.error("Error: --frontend=angular or --frontend=react is required for frontend generation");
-    process.exit(1);
-  }
 
   try {
-    const templateLayers = targets === "backend"
-      ? LAYERS
-      : targets === "frontend"
-        ? (frontend === "angular" ? ANGULAR_ENTITY_LAYERS : REACT_FRONTEND_LAYERS)
-        : [...LAYERS, ...(frontend === "angular" ? ANGULAR_ENTITY_LAYERS : REACT_FRONTEND_LAYERS)];
+    const templateLayers = [...LAYERS, ...CORE_LAYERS];
     const compiled = loadTemplates(templateLayers);
     const schemas = loadSchemas(schemaInput);
     const names = new Set();
     const report = { written: 0, skipped: 0, planned: 0 };
+    const schemaOutputPaths = new Set();
 
     const warnings = validateSchemaSet(schemas, { strict: strictRelations });
     for (const warning of warnings) console.warn(`Warning: ${warning}`);
@@ -417,19 +481,9 @@ function main() {
       }
       names.add(key);
       if (verbose) console.log(`Features: ${JSON.stringify(entity.features)}`);
-      if (targets === "backend" || targets === "all") {
-        generateEntity(entity, compiled, outputDir, { force, dryRun }, report);
-      }
+      generateEntity(entity, compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
     }
-    if (targets === "frontend" || targets === "all") {
-      if (frontend === "angular") {
-        for (const entity of schemas) {
-          generateFrontendEntity(entity, compiled, outputDir, { force, dryRun }, report);
-        }
-      } else {
-        generateFrontend(schemas, compiled, outputDir, { force, dryRun }, report, frontend);
-      }
-    }
+    generateCore(compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
     console.log(`\nSummary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

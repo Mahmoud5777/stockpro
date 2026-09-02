@@ -2,31 +2,33 @@
 /**
  * Frontend generator for the StockPro backend generator.
  *
- * Renders a client project (Angular / React / Vue) from the same entity schemas
- * used by the backend generator. Template packs live under
- * `templates/frontend/<framework>/` and are produced by the parallel Copilot
- * tracks. This module owns orchestration, the shared model, and output layout
- * only — never the template content.
+ * Produces a runnable frontend client from an entity schema set and a "template
+ * pack". A template pack is a single self-contained .spack ZIP that fully
+ * describes the desired UI/shape/design — so the frontend is fully decoupled
+ * from this generator. Packs are produced by tools/pack-frontend.js (or any
+ * equivalent template generator that emits a .spack archive).
  *
- * Usage: node generate-frontend.js <schemaDir> <clientRoot> [--frontend=angular] [--force] [--dry-run]
+ * A pack contains:
+ *   - project files copied verbatim into the generated client,
+ *   - one or more Handlebars templates (*.hbs) rendered against the schemas
+ *     (the rendered file's path drops the .hbs suffix),
+ *   - a root pack.json manifest.
+ *
+ * Usage:
+ *   node generate-frontend.js <schemaDir> <clientRoot> [--frontend=next]
+ *        [--frontend-template=<file.spack>] [--force]
  */
-
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const Handlebars = require("handlebars");
-const { loadSchemas, normalizeEntity } = require("./generate");
+const { loadSchemas } = require("./generate");
 const { validateFrontendManifest } = require("./validate");
+const { readZip } = require("./lib/zip");
 
 const ROOT = __dirname;
 const TEMPLATES_FRONTEND_DIR = path.join(ROOT, "templates", "frontend");
-
-Handlebars.registerHelper("eq", (left, right) => left === right);
-Handlebars.registerHelper("ne", (left, right) => left !== right);
-Handlebars.registerHelper("lowerFirst", (value) => value.charAt(0).toLowerCase() + value.slice(1));
-Handlebars.registerHelper("capitalize", (value) => value.charAt(0).toUpperCase() + value.slice(1));
-Handlebars.registerHelper("kebabCase", (value) =>
-  String(value).replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase()
-);
+const DEFAULT_PACK = path.join(TEMPLATES_FRONTEND_DIR, "packs", "next-tailwind.spack");
 
 const JAVA_TO_TS = {
   String: "string", Integer: "number", Long: "number", Double: "number",
@@ -42,199 +44,159 @@ function kebab(name) {
   return String(name).replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase();
 }
 
-// Per-entity layers: template file (relative to framework dir) -> output path.
-const FRAMEWORK_LAYERS = {
-  angular: [
-    { tpl: "model.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.model.ts` },
-    { tpl: "service.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.service.ts` },
-    { tpl: "list/list.component.ts.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.list.component.ts` },
-    { tpl: "list/list.component.html.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.list.component.html` },
-    { tpl: "list/list.component.scss.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.list.component.scss` },
-    { tpl: "form/form.component.ts.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.form.component.ts` },
-    { tpl: "form/form.component.html.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.kebabName}.form.component.html` },
-  ],
-  react: [
-    { tpl: "model.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.model.ts` },
-    { tpl: "service.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.service.ts` },
-    { tpl: "list/List.tsx.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/List.tsx` },
-    { tpl: "form/Form.tsx.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/Form.tsx` },
-  ],
-  vue: [
-    { tpl: "model.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.model.ts` },
-    { tpl: "service.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/${e.name}.service.ts` },
-    { tpl: "list/List.vue.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/List.vue` },
-    { tpl: "form/Form.vue.hbs", out: (e) => `src/app/features/${e.module}/${e.kebabName}/Form.vue` },
-  ],
-};
-
-function loadFrontendTemplates(framework) {
-  const dir = path.join(TEMPLATES_FRONTEND_DIR, framework);
-  if (!fs.existsSync(dir)) return null;
-  const map = {};
-  (function walk(current, rel) {
-    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
-      const full = path.join(current, entry.name);
-      const relative = path.join(rel, entry.name);
-      if (entry.isDirectory()) {
-        walk(full, relative);
-      } else if (entry.name.endsWith(".hbs")) {
-        map[relative.split(path.sep).join("/")] = Handlebars.compile(fs.readFileSync(full, "utf8"), { noEscape: true });
-      }
-    }
-  })(dir, "");
-  return map;
-}
-
-function writeFile(filePath, content, options, report) {
-  if (options.dryRun) {
-    report.planned += 1;
-    console.log(`  plan             ${filePath}`);
-    return;
-  }
-  if (fs.existsSync(filePath) && !options.force) {
-    report.skipped += 1;
-    console.log(`  skip   (exists) ${filePath}`);
-    return;
-  }
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content, "utf8");
-  report.written += 1;
-  console.log(`  wrote           ${filePath}`);
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function augmentForFrontend(entity) {
   const e = entity;
   e.idTsType = e.idType === "Long" ? "number" : "string";
   e.kebabName = kebab(e.name);
-  for (const field of e.fields || []) field.tsType = tsType(field.javaType);
-  for (const rel of e.manyToOne || []) rel.tsIdType = rel.targetIdType === "Long" ? "number" : "string";
-  for (const rel of e.relationIds || []) rel.tsIdType = rel.targetIdType === "Long" ? "number" : "string";
+  e.label = e.tagLabel || `${e.name}s`;
+  e.permissionCode =
+    e.permissionCode ||
+    `ADMIN_${e.name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
+  for (const field of e.fields || []) {
+    field.tsType = tsType(field.javaType);
+    field.label = field.label || capitalize(field.name);
+  }
+  for (const rel of e.manyToOne || []) {
+    rel.tsIdType = rel.targetIdType === "Long" ? "number" : "string";
+  }
+  for (const rel of e.relationIds || []) {
+    rel.tsIdType = rel.targetIdType === "Long" ? "number" : "string";
+  }
   return e;
 }
 
-function globalOutputPath(relativeTemplatePath) {
-  let rel = stripHbs(relativeTemplatePath);
-  if (rel.startsWith("environments/")) return path.join("src", "environments", withCodeExt(rel.slice("environments/".length)));
-  if (rel.startsWith("app/")) return path.join("src", "app", withCodeExt(rel.slice("app/".length)));
-  if (rel.startsWith("shared/") || rel.startsWith("_shared/")) {
-    const rest = rel.slice(rel.startsWith("shared/") ? "shared/".length : "_shared/".length);
-    return path.join("src", "app", "shared", withCodeExt(rest));
+function copyDir(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(s, d);
+    } else {
+      fs.mkdirSync(path.dirname(d), { recursive: true });
+      fs.copyFileSync(s, d);
+    }
   }
-  return withCodeExt(rel);
 }
 
-function stripHbs(p) {
-  return p.replace(/\.hbs$/, "");
+function stagedTemplates(packFiles, packJson, data) {
+  const staging = fs.mkdtempSync(path.join(os.tmpdir(), "spack-"));
+  for (const rel of Object.keys(packFiles)) {
+    if (rel === "pack.json") continue;
+    if (rel.endsWith(".hbs")) continue;
+    const out = path.join(staging, rel.split("/").join(path.sep));
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, packFiles[rel]);
+  }
+  const templates = Array.isArray(packJson.templates) ? packJson.templates : [];
+  for (const rel of templates) {
+    const content = packFiles[rel];
+    if (content === undefined) {
+      throw new Error(`Template pack declares '${rel}' but the file is missing`);
+    }
+    const src = Handlebars.compile(content.toString("utf8"), { noEscape: true });
+    const outRel = rel.endsWith(".hbs") ? rel.slice(0, -".hbs".length) : rel;
+    const out = path.join(staging, outRel.split("/").join(path.sep));
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, src(data));
+  }
+  return staging;
 }
 
-const CODE_EXT = /\.(ts|tsx|js|jsx|html|scss|css|json|vue)$/;
-function withCodeExt(p) {
-  return CODE_EXT.test(p) ? p : `${p}.ts`;
+function loadPack(packPath) {
+  if (!fs.existsSync(packPath)) {
+    throw new Error(`Template pack not found: ${packPath}`);
+  }
+  const packFiles = readZip(fs.readFileSync(packPath));
+  if (!packFiles["pack.json"]) {
+    throw new Error(`Template pack '${packPath}' has no pack.json manifest`);
+  }
+  const packJson = JSON.parse(packFiles["pack.json"].toString("utf8"));
+  return { packFiles, packJson };
 }
 
-function fallbackRoutes(entities) {
-  const lines = entities.map((entity) => {
-    const e = augmentForFrontend(entity);
-    return `  { path: '${e.urlPath}', loadComponent: () => import('./features/${e.module}/${e.kebabName}/${e.kebabName}.list.component').then(m => m.${e.name}ListComponent), data: { permission: '${e.permissionCode}' } },`;
-  });
-  return `// Generated by stockpro-backend-generator — do not edit by hand.
-import { Routes } from '@angular/router';
-
-export const appRoutes: Routes = [
-${lines.join("\n")}
-];
-`;
+function normalizeFrontendConfig(manifest) {
+  const frontendConfig = manifest.frontend || {};
+  const defaults = {
+    framework: "next",
+    uiLibrary: "tailwind",
+    state: "zustand",
+    features: {
+      pagination: true,
+      search: true,
+      filtering: true,
+      export: true,
+      i18n: true,
+      theming: true,
+    },
+  };
+  for (const key of Object.keys(defaults)) {
+    if (frontendConfig[key] === undefined) frontendConfig[key] = defaults[key];
+  }
+  if (typeof frontendConfig.features !== "object" || frontendConfig.features === null) {
+    frontendConfig.features = defaults.features;
+  }
+  return frontendConfig;
 }
 
 function main() {
   const args = process.argv.slice(2);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: node generate-frontend.js <schemaDir> <clientRoot> [--frontend=angular] [--force] [--dry-run]");
+    console.log(
+      "Usage: node generate-frontend.js <schemaDir> <clientRoot> [--frontend=next] [--frontend-template=<file.spack>] [--force]"
+    );
     return;
   }
-  const force = args.includes("--force");
-  const dryRun = args.includes("--dry-run");
   const frontendArg = args.find((a) => a.startsWith("--frontend="));
-  const framework = frontendArg ? frontendArg.split("=")[1] : null;
+  const framework = frontendArg ? frontendArg.split("=")[1] : "next";
+  const templateArg = args.find((a) => a.startsWith("--frontend-template="));
   const positional = args.filter((a) => !a.startsWith("--"));
   const [schemaInput, clientRoot] = positional;
-  if (!schemaInput || !clientRoot || !framework) {
-    console.error("Error: <schemaDir> <clientRoot> and --frontend are required.");
+  if (!schemaInput || !clientRoot) {
+    console.error("Error: <schemaDir> and <clientRoot> are required.");
+    process.exit(1);
+  }
+  if (framework !== "next") {
+    console.error("Error: only --frontend=next is supported by this generator.");
     process.exit(1);
   }
 
   try {
-    const templates = loadFrontendTemplates(framework);
-    if (!templates) {
-      console.warn(`Warning: frontend template pack for '${framework}' not found at ${path.join(TEMPLATES_FRONTEND_DIR, framework)}. Skipping frontend generation.`);
-      return;
-    }
-
     const manifestPath = fs.existsSync(path.join(clientRoot, "project.json"))
       ? path.join(clientRoot, "project.json")
       : path.join(clientRoot, "..", "project.json");
-    const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : {};
-    const frontendConfig = manifest.frontend || { framework, features: {} };
-
+    const manifest = fs.existsSync(manifestPath)
+      ? JSON.parse(fs.readFileSync(manifestPath, "utf8"))
+      : {};
+    const frontendConfig = normalizeFrontendConfig(manifest);
     validateFrontendManifest(frontendConfig, "frontend");
+
+    const packPath = templateArg
+      ? templateArg.split("=")[1]
+      : (frontendConfig.templatePath || DEFAULT_PACK);
+    const { packFiles, packJson } = loadPack(packPath);
 
     const schemas = loadSchemas(schemaInput);
     schemas.forEach(augmentForFrontend);
-    validateSchemaSetSafe(schemas);
-    const report = { written: 0, skipped: 0, planned: 0 };
 
-    // Globals (app/, environments/, shared/, _shared/, root config files)
-    for (const [rel, tpl] of Object.entries(templates)) {
-      const isEntityLayer = (FRAMEWORK_LAYERS[framework] || []).some((l) => l.tpl === rel);
-      if (isEntityLayer || rel === "routes.fragment.hbs") continue;
-      const outPath = path.join(clientRoot, globalOutputPath(rel));
-      const content = tpl({ app: manifest, frontend: frontendConfig, entities: schemas });
-      writeFile(outPath, content, { force, dryRun }, report);
-    }
+    const staging = stagedTemplates(packFiles, packJson, { entities: schemas });
+    console.log(`\nFrontend scaffold (${packJson.name || "template"}) -> ${clientRoot}`);
+    copyDir(staging, clientRoot);
+    fs.rmSync(staging, { recursive: true, force: true });
 
-    // Per-entity layers
-    for (const entity of schemas) {
-      const e = entity;
-      console.log(`\n${e.name} (${e.module})`);
-      for (const layer of FRAMEWORK_LAYERS[framework] || []) {
-        const tpl = templates[layer.tpl];
-        if (!tpl) {
-          console.log(`  (missing template ${layer.tpl} — skipped)`);
-          continue;
-        }
-        const content = tpl({ entity: e, app: manifest, frontend: frontendConfig });
-        writeFile(path.join(clientRoot, layer.out(e)), content, { force, dryRun }, report);
-      }
-    }
-
-    // Routes: rely on the framework's own routes template (app/app.routes.hbs or
-    // app/routes.tsx.hbs). Emit a minimal fallback only if none was generated.
-    const routesOut = framework === "react"
-      ? path.join(clientRoot, "src", "app", "routes.tsx")
-      : path.join(clientRoot, "src", "app", "app.routes.ts");
-    if (!fs.existsSync(routesOut)) {
-      writeFile(routesOut, fallbackRoutes(schemas), { force, dryRun }, report);
-    }
-
-    console.log(`\nFrontend summary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`);
+    console.log(`\nFrontend summary: ${schemas.length} entities registered from pack '${packPath}'.`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
   }
 }
 
-function validateSchemaSetSafe(schemas) {
-  // Reuse backend validation lightly; missing relation targets are warnings here.
-  try {
-    const { validateSchemaSet } = require("./validate");
-    validateSchemaSet(schemas, { strict: false });
-  } catch (e) {
-    // non-fatal for frontend; the backend generator enforces strictness
-  }
-}
+module.exports = { augmentForFrontend, kebab, tsType, loadPack, normalizeFrontendConfig, stagedTemplates, main };
 
 if (require.main === module) {
   main();
 }
-
-module.exports = { loadFrontendTemplates, augmentForFrontend, fallbackRoutes, main };

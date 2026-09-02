@@ -13,6 +13,14 @@ const readline = require("node:readline");
 const { spawnSync } = require("node:child_process");
 
 const root = __dirname;
+const IS_TTY = Boolean(process.stdin.isTTY);
+const CLI_ARGS = process.argv.slice(2);
+function cliFlag(name) {
+  const hit = CLI_ARGS.find((a) => a === name || a.startsWith(`${name}=`));
+  if (!hit) return undefined;
+  const eq = hit.indexOf("=");
+  return eq === -1 ? true : hit.slice(eq + 1);
+}
 const VALID_ID_TYPES = ["UUID", "String", "Long"];
 const SECURITY_LEVELS = ["low", "medium", "high"];
 const AUTH_TYPES = ["jwt", "session", "none"];
@@ -20,10 +28,10 @@ const APP_TYPES = ["REST API", "Web application", "Microservice"];
 const BUILD_TOOLS = ["maven", "gradle"];
 const DB_TYPES = ["postgresql", "mysql", "h2", "oracle"];
 const TARGETS = ["backend", "frontend", "both"];
-const FRAMEWORKS = ["angular", "react", "vue"];
-const FRONTEND_BUILD_TOOLS = { angular: ["angular-cli", "vite"], react: ["vite"], vue: ["vite", "vue-cli"] };
-const UI_LIBRARIES = { angular: ["primeng", "angular-material"], react: ["antd", "mui"], vue: ["vuetify", "element-plus"] };
-const STATE_LIBS = { angular: ["signals", "ngrx"], react: ["tanstack-query", "redux"], vue: ["pinia", "vuex"] };
+const FRAMEWORKS = ["next"];
+const FRONTEND_BUILD_TOOLS = { next: ["next-cli"] };
+const UI_LIBRARIES = { next: ["tailwind"] };
+const STATE_LIBS = { next: ["zustand"] };
 
 function askInterface() {
   if (!process.stdin.isTTY) {
@@ -128,18 +136,17 @@ async function collectSecurity(rl) {
 }
 
 async function collectFrontend(rl) {
-  console.log("\nFrontend:");
+  console.log("\nFrontend (Next.js) :");
   const framework = await choose(rl, "Framework", FRAMEWORKS, 0);
-  const frontendBuildTool = await choose(rl, "Outil de build du frontend", FRONTEND_BUILD_TOOLS[framework], 0);
-  const uiLibrary = await choose(rl, "Bibliothèque UI", UI_LIBRARIES[framework], 0);
-  const state = await choose(rl, "Gestion d'état / données", STATE_LIBS[framework], 0);
+  const templatePath = await ask(rl, "Template pack (.spack) — vide pour le pack intégré");
   const i18n = await askBool(rl, "Internationalisation (i18n)", true);
   const theming = await askBool(rl, "Thème clair/sombre", true);
   return {
     framework,
-    buildTool: frontendBuildTool,
-    uiLibrary,
-    state,
+    buildTool: "next-cli",
+    uiLibrary: "tailwind",
+    state: "zustand",
+    templatePath: templatePath || undefined,
     features: {
       pagination: true,
       search: true,
@@ -382,11 +389,116 @@ async function runWizard() {
     if (backendResult.status !== 0) throw new Error("La génération du backend a échoué; consultez les messages ci-dessus.");
   }
   if (clientRoot) {
-    const frontendResult = spawnSync(process.execPath, [path.join(root, "generate-frontend.js"), schemaDir, clientRoot, `--frontend=${frontend.framework}`], { stdio: "inherit" });
+    const frontendArgs = [
+      path.join(root, "generate-frontend.js"),
+      schemaDir,
+      clientRoot,
+      `--frontend=${frontend.framework}`,
+    ];
+    const templatePath =
+      cliFlag("--frontend-template") || frontend.templatePath || undefined;
+    if (templatePath) frontendArgs.push(`--frontend-template=${templatePath}`);
+    const frontendResult = spawnSync(process.execPath, frontendArgs, { stdio: "inherit" });
     if (frontendResult.status !== 0) throw new Error("La génération du frontend a échoué; consultez les messages ci-dessus.");
   }
+
+  await finishAndSupportRun(absoluteOutput, { targets, serverRoot, clientRoot });
+}
+
+function runInstructions(parts) {
+  console.log("\nExécution de l'application générée :");
+  if (parts.server) {
+    console.log(`  Backend :  cd "${parts.server}" && mvn spring-boot:run   ->  http://localhost:8080`);
+  }
+  if (parts.client) {
+    console.log(`  Frontend : cd "${parts.client}" && npm install && npm run dev  ->  http://localhost:3000`);
+  }
+  console.log(`  Raccourci: "${parts.output}\\dev-run.ps1" (Windows) ou "${parts.output}\\dev-run.sh"`);
+  console.log(`  Vérifier : npm run test-app -- "${parts.output}"`);
+}
+
+function writeDevScripts(absoluteOutput, serverRoot, clientRoot) {
+  fs.mkdirSync(absoluteOutput, { recursive: true });
+  if (serverRoot) {
+    const ps1 = [
+      "# StockPro generated app - development launcher",
+      `param([switch]$NoInstall)`,
+      `Write-Host "Starting backend on :8080..."`,
+      `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, serverRoot)}\\\`"; mvn spring-boot:run")`,
+    ];
+    if (clientRoot) {
+      ps1.push(
+        `Write-Host "Starting frontend on :3000..."`,
+        `if (-not $NoInstall) { Push-Location "$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}"; npm install; Pop-Location }`,
+        `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}\\\`"; npm run dev")`
+      );
+    }
+    fs.writeFileSync(path.join(absoluteOutput, "dev-run.ps1"), ps1.join("\r\n") + "\r\n");
+  }
+  if (serverRoot || clientRoot) {
+    const sh = ["#!/usr/bin/env bash", `set -e`, `DIR="$(cd "$(dirname "$0")" && pwd)"`];
+    if (serverRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, serverRoot).replace(/\\/g, "/")}" && mvn spring-boot:run ) &`);
+    if (clientRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, clientRoot).replace(/\\/g, "/")}" && npm install && npm run dev ) &`);
+    sh.push(`wait`);
+    fs.writeFileSync(path.join(absoluteOutput, "dev-run.sh"), sh.join("\n") + "\n");
+  }
+}
+
+async function finishAndSupportRun(absoluteOutput, { targets, serverRoot, clientRoot }) {
   console.log("\nGénération terminée. Vérifiez avec:");
-  console.log(`  npm run test-app -- ${absoluteOutput}`);
+  console.log(`  npm run test-app -- "${absoluteOutput}"`);
+
+  writeDevScripts(absoluteOutput, serverRoot, clientRoot);
+
+  const rela = path.relative(process.cwd(), absoluteOutput) || ".";
+  runInstructions({
+    output: absoluteOutput,
+    server: serverRoot ? path.join(rela, path.relative(absoluteOutput, serverRoot)).replace(/\\/g, "/") : null,
+    client: clientRoot ? path.join(rela, path.relative(absoluteOutput, clientRoot)).replace(/\\/g, "/") : null,
+  });
+
+  const forceRun = cliFlag("--run") === true || cliFlag("--run") === "1" || cliFlag("--run") === "yes";
+  const skipRun = cliFlag("--skip-run") !== undefined;
+  let runNow = false;
+  if (skipRun) {
+    runNow = false;
+  } else if (forceRun) {
+    runNow = true;
+  } else if (IS_TTY) {
+    runNow = await new Promise((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question("  Lancer l'application maintenant ? (y/N): ", (answer) => {
+        rl.close();
+        const v = answer.trim().toLowerCase();
+        resolve(v === "y" || v === "yes" || v === "o" || v === "oui");
+      });
+    });
+  }
+
+  if (runNow) {
+    await launchGenerated(absoluteOutput, { targets, serverRoot, clientRoot });
+  } else {
+    console.log("\nVous pouvez lancer l'application à tout moment avec le script dev-run.ps1 / dev-run.sh, ou en suivant les commandes ci-dessus.");
+  }
+}
+
+function launchGenerated(absoluteOutput, { serverRoot, clientRoot }) {
+  const spawn = require("node:child_process").spawn;
+  if (clientRoot) {
+    console.log(`\nInstallation des dépendances frontend (${clientRoot})...`);
+    const install = spawnSync("npm", ["install"], { cwd: clientRoot, stdio: "inherit", shell: process.platform === "win32" });
+    if (install.status !== 0) {
+      console.warn("  npm install a échoué — le frontend ne pourra pas démarrer.");
+    } else {
+      console.log("  Démarrage du frontend (Next.js) sur http://localhost:3000 ...");
+      spawn("npm", ["run", "dev"], { cwd: clientRoot, stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
+    }
+  }
+  if (serverRoot) {
+    console.log(`  Démarrage du backend (Spring Boot) sur http://localhost:8080 ...`);
+    spawn("mvn", ["spring-boot:run"], { cwd: serverRoot, stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
+  }
+  console.log("\nLes serveurs démarrent dans des fenêtres séparées. Arrêtez-les avec Ctrl+C dans chaque fenêtre.");
 }
 
 runWizard().catch((error) => {

@@ -32,7 +32,7 @@ import java.util.UUID;
 public class {{entity.name}} {
 
 @Id
-@Column(name = "{{entity.idColumn}}",{{#if (eq entity.idType "UUID")}}, length = 32{{/if}}{{#if (eq entity.idType "Long")}}, length = 21{{/if}}, nullable = false, updatable = false)
+@Column(name = "{{entity.idColumn}}",{{#if (eq entity.idType "UUID")}} length = 32,{{else if (eq entity.idType "Long")}} length = 21,{{/if}}nullable = false, updatable = false)
 private {{entity.idType}} {{entity.idField}};
 
 {{#each entity.fields}}

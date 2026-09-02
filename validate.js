@@ -22,16 +22,12 @@ const VALID_JAVA_TYPES = [
 const VALID_SECURITY_LEVELS = ["low", "medium", "high"];
 const VALID_AUTH_TYPES = ["jwt", "session", "none"];
 
-const VALID_FRAMEWORKS = ["angular", "react", "vue"];
+const VALID_FRAMEWORKS = ["next"];
 const VALID_UI_LIBRARIES = {
-  angular: ["primeng", "angular-material"],
-  react: ["antd", "mui"],
-  vue: ["vuetify", "element-plus"],
+  next: ["tailwind"],
 };
 const VALID_STATE_LIBS = {
-  angular: ["signals", "ngrx"],
-  react: ["tanstack-query", "redux"],
-  vue: ["pinia", "vuex"],
+  next: ["zustand"],
 };
 
 function isJavaIdentifier(value) {

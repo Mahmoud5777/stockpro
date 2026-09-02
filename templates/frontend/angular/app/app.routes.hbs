@@ -1,8 +1,0 @@
-import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
-import { permissionGuard } from './core/permission/permission.guard';
-
-export const routes: Routes = [
-{{#each entities}} { path: '{{kebabName}}', data: { entity: '{{name}}', operation: 'consultation' },
-canActivate:[authGuard,permissionGuard] },
-{{/each}}];

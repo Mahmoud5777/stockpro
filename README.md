@@ -1,7 +1,8 @@
-# StockPro Backend Generator
+# StockPro Generator
 
-A Node.js CLI and code-generation engine that produces a complete Spring Boot
-backend (Java 17 / Spring Boot 3.x) from a JSON application model. It is
+A Node.js CLI and code-generation engine that produces a complete, runnable
+full-stack application from a JSON application model: a Spring Boot backend
+(Java 17 / Spring Boot 3.5.x) and a Next.js frontend (App Router). It is
 inspired by the [stockpro](https://github.com/Mahmoud5777/stockpro) project and
 targets the `stockpro-yacine` security/stock-management domain.
 
@@ -220,34 +221,53 @@ pattern `<permissionPrefix>_<ENTITY>` (e.g. `ADMIN_USER`).
 
 ## Generated application structure
 
+A full-stack output (`targets: ["backend", "frontend"]`) looks like:
+
 ```
 <output>/
   project.json
   schemas/<NN>-<Entity>.json
-  src/main/java/com/stockpro/
-    entity/<module>/<Entity>.java
-    dto/<module>/<Entity>DTO.java
-    repository/<module>/<Entity>Repository.java
-    service/<module>/<Entity>Service.java
-    service/<module>/impl/<Entity>ServiceImpl.java
-    mapper/<module>/<Entity>Mapper.java
-    controller/<module>/<Entity>Controller.java
+  server/                          # Spring Boot backend
+    pom.xml
+    src/main/java/com/stockpro/
+      entity/<module>/<Entity>.java
+      entity/security/User.java     # built-in auth core
+      dto/<module>/<Entity>DTO.java
+      repository/<module>/<Entity>Repository.java
+      service/<module>/<Entity>Service.java
+      service/<module>/impl/<Entity>ServiceImpl.java
+      mapper/<module>/<Entity>Mapper.java
+      controller/<module>/<Entity>Controller.java
+      controller/auth/AuthController.java
+      security/...                  # JWT filter, JwtService, AccessGuard
+      util/ExcelExporter.java
+  client/                          # Next.js frontend
+    package.json
+    next.config.mjs                # rewrites /api -> http://localhost:8080/api
+    src/
+      lib/entities-registry.ts      # generated from the schemas
+      features/shared/EntityCrud.tsx
+      features/auth/...
 ```
+
+The built-in backend **auth core** (JWT login/refresh/logout, `User`/`Role`/
+`RefreshToken` entities, `AccessGuard`, Excel export) is emitted for every
+backend project so the generated app is runnable out of the box.
 
 ## Frontend generation
 
-The same entity schemas drive a client project. The wizard asks one extra
-question — **generation target** — and, when the target includes a frontend,
-a set of stack prompts:
+The same entity schemas drive a Next.js client project. The wizard asks one
+extra question — **generation target** — and, when the target includes a
+frontend, a short set of stack prompts:
 
 ```
 Generation target (backend / frontend / both) [both]:
-Framework (angular / react / vue):          angular
-Outil de build du frontend:                 angular-cli
-Bibliothèque UI (primeng / angular-material): primeng
-Gestion d'état / données (signals / ngrx):  signals
-Internationalisation (i18n) (Y/n):           Y
-Thème clair/sombre (y/N):                    Y
+Frontend framework (next):                     next
+Template pack (.spack) — vide pour le pack intégré:
+Bibliothèque UI (tailwind):                    tailwind
+Gestion d'état / données (zustand):            zustand
+Internationalisation (i18n) (Y/n):             N
+Thème clair/sombre (y/N):                       N
 ```
 
 Targets:
@@ -260,27 +280,25 @@ Targets:
 
 The frontend reuses the exact same `entity` model as the backend. `idType`
 maps to `string` (`UUID`/`String`) or `number` (`Long`); `javaType` maps to a
-TypeScript type; `manyToOne` becomes a select bound to `<targetIdType>`; the
-API base URL is `environment.apiUrl` and per-entity services call
-`/api/<urlPath>`. Security levels and `permissionCode` drive route guards and
-button visibility exactly like the backend.
+TypeScript type; `manyToOne` becomes a select bound to the target id type; the
+shared `EntityCrud` harness renders a list + form per entity and calls
+`/api/<urlPath>`. `next.config.mjs` rewrites `/api/*` to the backend, so the
+client talks to `http://localhost:8080` during development.
 
 Implemented template packs:
 
-* **Angular + PrimeNG + signals** — fully supported. Produces `model.ts`,
-  `service.ts`, list and form components, `app.routes.ts`, auth/permission
-  guards, JWT interceptor, i18n, and a layout shell.
-
-> `react` and `vue` are accepted by the validator but their template packs are
-> not bundled yet; selecting them warns and skips client generation until the
-> corresponding `templates/frontend/<framework>/` pack is added.
+* **Next.js (App Router) + Tailwind + TanStack Query + Zustand** — fully
+  supported. Produces a static scaffold (auth context, login, protected
+  routes, dashboard layout, sidebar) plus a generated `entities-registry.ts`
+  and a generic, per-entity CRUD component.
 
 Run it:
 
 ```bash
 npm run wizard          # choose backend / frontend / both and the stack
-# or headless:
-node generate-frontend.js generated-app/schemas generated-app/client --frontend=angular
+# or headless with a specific template pack:
+node generate-frontend.js generated-app/schemas generated-app/client \
+    --frontend=next --frontend-template=path/to/my.spack
 ```
 
 Verify (backend, frontend, or both):
@@ -289,11 +307,80 @@ Verify (backend, frontend, or both):
 npm run test-app -- generated-app
 ```
 
+## Template packs (.spack)
+
+The frontend is generated entirely from a **template pack** — a single
+self-contained `.spack` ZIP that describes the exact UI, shape and design you
+want. This decouples the frontend from the generator: build a pack once, reuse
+it everywhere, and swap designs without touching the generator's code.
+
+A pack contains:
+
+* **project files** — copied verbatim into the generated client,
+* **Handlebars templates** (files ending in `.hbs`) — rendered against the
+  entity schemas; the rendered file's path drops the `.hbs` suffix,
+* a root **`pack.json`** manifest (framework, uiLibrary, state, templates).
+
+The bundled pack is `templates/frontend/packs/next-tailwind.spack`. Use
+`--frontend-template=<file.spack>` (or the wizard prompt) to use another.
+
+### Building your own pack
+
+`tools/pack-frontend.js` turns any finished frontend template project into a
+`.spack` file — this is the "template generator" for the frontend:
+
+```bash
+# pack a custom template directory into a reusable .spack
+node tools/pack-frontend.js path/to/my-template out/sp/my.spack \
+    --name=my-design --framework=next
+# to also inject the generated entity registry template:
+node tools/pack-frontend.js path/to/my-template out/sp/my.spack \
+    --registry=templates/frontend/next/entities-registry.ts.hbs
+```
+
+It scans `<templateDir>` recursively; any `*.hbs` file becomes a Handlebars
+template rendered at generation time. You can regenerate the bundled pack with:
+
+```bash
+node tools/pack-frontend.js templates/frontend/next/static \
+    templates/frontend/packs/next-tailwind.spack \
+    --name=next-tailwind --framework=next \
+    --registry=templates/frontend/next/entities-registry.ts.hbs
+```
+
+## Running the generated app
+
+After generation the wizard prints run instructions and writes launcher scripts
+into the output directory:
+
+* **`dev-run.ps1`** (Windows) and **`dev-run.sh`** (bash) — start the backend
+  and frontend dev servers in separate windows/background.
+
+When run interactively, the wizard also asks **"Lancer l'application maintenant ?"**
+and, on yes, installs the frontend dependencies and launches both dev servers.
+For non-interactive use pass `--run` to launch immediately or `--skip-run` to
+always skip:
+
+```bash
+node cli.js < answers.txt --run       # generate then install + launch
+node cli.js < answers.txt --skip-run  # generate only
+```
+
+Steps required once per machine:
+
+```bash
+cd <output>/server && mvn spring-boot:run   # backend  -> http://localhost:8080  (needs PostgreSQL)
+cd <output>/client && npm install && npm run dev
+```
+
+Log in with the seeded account `admin / admin123`.
+
 ## Verifying a generated application
 
 `verify-app.js` checks the manifest (`entityCount` vs `generationOrder`),
-confirms 49 expected Java files exist, and fails if any file still contains an
-unresolved `{{` / `}}` Handlebars placeholder:
+confirms the expected Java files exist for each generated entity, and fails if
+any backend file still contains an unresolved `{{` / `}}` Handlebars
+placeholder:
 
 ```bash
 npm run test-app -- generated-app
@@ -308,11 +395,13 @@ npm test
 The suite covers: CLI help, schema validation errors, relation validation,
 dry-run/skip/force behaviour, identifier types, relation resolution, the formal
 schema contract, duplicate detection, security levels, generated-app
-verification, and the wizard output.
+verification, the wizard output, frontend generation, and the template-pack
+(pack → client) round trip.
 
 ## Example domain model
 
-The bundled `generated-app/schemas` models the stockpro security domain:
+The bundled `generated-app/schemas` models a small stock/crm domain:
 
-`User`, `Site`, `Role`, `Group`, `UserSite`, `GroupeRole`, `UserSiteDroits`
-with the relations, ids and security levels used in production.
+`Product` (module `stock`), `Category` (module `stock`), and `Customer`
+(module `crm`), with `Product → Category` (many-to-one) and the relations, ids
+and security levels used to exercise the generator.
