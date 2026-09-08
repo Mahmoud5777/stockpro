@@ -29,6 +29,7 @@ const VALID_UI_LIBRARIES = {
 const VALID_STATE_LIBS = {
   next: ["zustand"],
 };
+const VALID_FRONTEND_FEATURES = ["pagination", "search", "filtering", "export", "i18n", "theming"];
 
 function isJavaIdentifier(value) {
   return typeof value === "string" && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(value);
@@ -58,6 +59,9 @@ function validateEntitySchema(entity, source) {
   if (!/^[a-z0-9-]+$/.test(entity.urlPath)) {
     throw new Error(`${source}: entity.urlPath '${entity.urlPath}' must be a valid URL path (lowercase, digits, hyphens)`);
   }
+  if (entity.defaultSortField !== undefined && !isJavaIdentifier(entity.defaultSortField)) {
+    throw new Error(`${source}: entity.defaultSortField '${entity.defaultSortField}' is not a valid Java identifier`);
+  }
   if (!isPackageName(entity.module)) {
     throw new Error(`${source}: entity.module '${entity.module}' is not a valid package name`);
   }
@@ -85,6 +89,10 @@ function validateEntitySchema(entity, source) {
     if (field.minLength && field.maxLength && field.minLength > field.maxLength) {
       throw new Error(`${source}: field '${field.name}' minLength > maxLength`);
     }
+  }
+  const defaultSortField = entity.defaultSortField || entity.fields?.[0]?.name || entity.idField;
+  if (!fieldNames.has(defaultSortField) && defaultSortField !== entity.idField) {
+    throw new Error(`${source}: entity.defaultSortField '${defaultSortField}' is not a declared field`);
   }
 
   // Relations: manyToOne
@@ -240,6 +248,11 @@ function validateFrontendManifest(frontend, source = "frontend") {
   if (typeof frontend.features !== "object" || frontend.features === null) {
     throw new Error(`${source}: features must be an object`);
   }
+  for (const feature of VALID_FRONTEND_FEATURES) {
+    if (frontend.features[feature] !== undefined && typeof frontend.features[feature] !== "boolean") {
+      throw new Error(`${source}: features.${feature} must be a boolean`);
+    }
+  }
   return true;
 }
 
@@ -252,4 +265,5 @@ module.exports = {
   VALID_FRAMEWORKS,
   VALID_UI_LIBRARIES,
   VALID_STATE_LIBS,
+  VALID_FRONTEND_FEATURES,
 };
