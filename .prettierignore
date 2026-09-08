@@ -1,1 +1,5 @@
 templates/*.hbs
+generated-app/
+node_modules/
+target/
+templates/**/*.spack

@@ -1,6 +1,7 @@
 {
   "name": "stockpro-backend-generator",
   "version": "0.1.0",
+  "type": "commonjs",
   "description": "Handlebars-based backend generator for the stockpro-yacine Spring Boot project",
   "main": "generate.js",
   "scripts": {
@@ -9,11 +10,19 @@
     "test": "node --test",
     "wizard": "node cli.js",
     "test-app": "node verify-app.js",
-    "pack:frontend": "node tools/pack-frontend.js"
+    "pack:frontend": "node tools/pack-frontend.js templates/frontend/next/static templates/frontend/packs/next-tailwind.spack --name=next-tailwind --framework=next --registry=templates/frontend/next/entities-registry.ts.hbs",
+    "lint": "prettier --check \"*.js\" \"lib/**/*.js\" \"test/**/*.js\" \"tools/**/*.js\"",
+    "repo:clean": "git clean -fdX -- generated-app node_modules"
   },
   "license": "ISC",
   "dependencies": {
     "handlebars": "^4.7.9"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=18.20.0 <23"
   },
   "author": ""
 }
