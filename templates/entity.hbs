@@ -1,0 +1,82 @@
+package com.stockpro.entity.{{entity.module}};
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+{{#if entity.hasWriteOnlyField}}
+import com.fasterxml.jackson.annotation.JsonProperty;
+{{/if}}
+import jakarta.persistence.*;
+import lombok.*;
+
+{{#each entity.manyToOneImports}}
+import com.stockpro.entity.{{this.module}}.{{this.name}};
+{{/each}}
+{{#if entity.needsLocalDate}}
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+{{/if}}
+{{#if entity.hasOneToMany}}
+import java.util.ArrayList;
+import java.util.List;
+{{/if}}
+{{#if (eq entity.idType "UUID")}}
+import java.util.UUID;
+{{/if}}
+
+@Entity
+@Table(name = "{{entity.tableName}}")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class {{entity.name}} {
+
+@Id
+@Column(name = "{{entity.idColumn}}",{{#if (eq entity.idType "UUID")}} length = 32,{{else if (eq entity.idType "Long")}} length = 21,{{/if}}nullable = false, updatable = false)
+private {{entity.idType}} {{entity.idField}};
+
+{{#each entity.fields}}
+{{#if this.writeOnly}}
+// Ecriture uniquement : jamais renvoyé dans les réponses JSON
+@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+{{/if}}
+@Column(name = "{{this.columnName}}"{{#if this.length}}, length = {{this.length}}{{/if}}{{#if this.unique}}, unique =
+true{{/if}}{{#if this.required}}, nullable = false{{/if}}{{#if this.columnDefinition}}, columnDefinition =
+"{{this.columnDefinition}}"{{/if}})
+private {{this.javaType}} {{this.name}};
+
+{{/each}}
+{{#each entity.manyToOne}}
+// Relation "{{this.relationName}}"
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "{{this.joinColumn}}"{{#if this.nullable}}{{else}}, nullable = false{{/if}})
+private {{this.target}} {{this.fieldName}};
+
+{{/each}}
+{{#each entity.oneToMany}}
+// Relation "{{this.relationName}}" : un {{../entity.name}} possède plusieurs {{this.target}}
+@JsonIgnore
+@Builder.Default
+@OneToMany(mappedBy = "{{this.mappedBy}}", cascade = CascadeType.ALL{{#if this.orphanRemoval}}, orphanRemoval =
+true{{/if}})
+private List<{{this.target}}> {{this.fieldName}} = new ArrayList<>();
+
+        {{/each}}
+        {{#each entity.relationIds}}
+        // Référence plate vers {{this.target}} (clé étrangère non gérée en tant qu'entité)
+        @Column(name = "{{this.fieldName}}Id"{{#if this.nullable}}{{else}}, nullable = false{{/if}})
+        private {{this.targetIdType}} {{this.fieldName}}Id;
+
+        {{/each}}
+        @PrePersist
+        public void prePersist() {
+        if (this.{{entity.idField}} == null) {
+        this.{{entity.idField}} = {{#if (eq entity.idType "UUID")}}UUID.randomUUID(){{else if (eq entity.idType "Long")}}System.currentTimeMillis(){{else}}java.util.UUID.randomUUID(){{/if}};
+        }
+        {{#if entity.hasDateCreation}}
+        if (this.dateCreation == null) {
+        this.dateCreation = LocalDate.now();
+        }
+        {{/if}}
+        }
+        }

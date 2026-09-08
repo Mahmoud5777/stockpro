@@ -1,0 +1,61 @@
+package com.stockpro.dto.{{entity.module}};
+
+{{#if entity.hasWriteOnlyField}}
+import com.fasterxml.jackson.annotation.JsonProperty;
+{{/if}}
+{{#if entity.features.validation}}
+import jakarta.validation.constraints.*;
+{{/if}}
+import lombok.*;
+
+{{#if entity.needsLocalDate}}
+import java.time.LocalDate;
+{{/if}}
+{{#if entity.needsUuidImport}}
+import java.util.UUID;
+{{/if}}
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class {{entity.name}}DTO {
+
+private {{entity.idType}} {{entity.idField}};
+
+{{#each entity.fields}}
+{{#if this.required}}
+{{#if (eq this.javaType "String")}}
+@NotBlank(message = "{{this.errorMessage}}")
+{{else}}
+@NotNull(message = "{{this.errorMessage}}")
+{{/if}}
+{{/if}}
+{{#if this.writeOnly}}
+// Ecriture uniquement : jamais renvoyé dans les réponses JSON
+@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+{{/if}}
+{{#if this.email}}
+@Email(message = "{{this.emailErrorMessage}}")
+{{/if}}
+{{#if this.minLength}}
+@Size(min = {{this.minLength}}{{#if this.maxLength}}, max = {{this.maxLength}}{{/if}}, message =
+"{{this.sizeErrorMessage}}")
+{{else if this.maxLength}}
+@Size(max = {{this.maxLength}})
+{{/if}}
+private {{this.javaType}} {{this.name}}{{#if this.defaultValue}} = {{this.defaultValue}}{{/if}};
+
+{{/each}}
+{{#each entity.manyToOne}}
+// Référence plate vers {{this.target}} (jamais l'entité complète dans un DTO)
+private {{this.targetIdType}} {{this.fieldName}}Id;
+
+{{/each}}
+{{#each entity.relationIds}}
+// Référence plate vers {{this.target}} (colonne d'identifiant)
+private {{this.targetIdType}} {{this.fieldName}}Id;
+
+{{/each}}
+}

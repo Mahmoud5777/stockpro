@@ -1,0 +1,6 @@
+node_modules/
+generated-app/
+templates/**/*.spack
+.next/
+target/
+*.tsbuildinfo

@@ -1,0 +1,141 @@
+package com.stockpro.controller.{{entity.module}};
+
+import com.stockpro.dto.{{entity.module}}.{{entity.name}}DTO;
+{{#if entity.features.pagination}}
+import com.stockpro.dto.common.PageResponseDTO;
+{{/if}}
+import com.stockpro.service.{{entity.module}}.{{entity.name}}Service;
+{{#if entity.features.export}}
+import com.stockpro.util.ExcelExporter;
+import io.swagger.v3.oas.annotations.Operation;
+{{/if}}
+import io.swagger.v3.oas.annotations.tags.Tag;
+{{#if entity.features.validation}}
+import jakarta.validation.Valid;
+{{/if}}
+import lombok.RequiredArgsConstructor;
+{{#if entity.features.security}}
+import org.springframework.security.access.prepost.PreAuthorize;
+{{/if}}
+{{#if entity.features.pagination}}
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+{{/if}}
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+{{#if (eq entity.idType "UUID")}}
+import java.util.UUID;
+{{/if}}
+{{#if entity.needsListImport}}
+import java.util.List;
+{{/if}}
+{{#if entity.needsMapImport}}
+import java.util.Map;
+{{/if}}
+
+@RestController
+@RequestMapping("/api/{{entity.urlPath}}")
+@RequiredArgsConstructor
+@Tag(name = "{{entity.tagLabel}}", description = "Gestion des {{entity.tagLabelLower}}")
+public class {{entity.name}}Controller {
+
+private final {{entity.name}}Service {{entity.serviceVar}};
+
+{{#if entity.features.pagination}}
+{{#if entity.securityOperations.consultation}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+@GetMapping
+public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
+    @RequestParam(required = false) String search,
+    @RequestParam Map<String, String> filters,
+        @PageableDefault(size = 20, sort = "{{entity.defaultSortField}}") Pageable pageable) {
+        Page<{{entity.name}}DTO> page = {{entity.serviceVar}}.findAll(search, filters, pageable);
+            return ResponseEntity.ok(PageResponseDTO.of(page));
+            }
+            {{/if}}
+            {{else}}
+            {{#if entity.securityOperations.consultation}}
+            @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+            @GetMapping
+            public ResponseEntity<List<{{entity.name}}DTO>> getAll() {
+                return ResponseEntity.ok({{entity.serviceVar}}.findAll());
+                }
+                {{/if}}
+                {{/if}}
+
+                {{#if entity.features.export}}
+                {{#if entity.securityOperations.export}}
+                @Operation(summary = "Exporter les {{entity.tagLabelLower}} (recherche + filtres) en Excel (.xlsx)")
+                @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'EXPORT')")
+                @GetMapping("/export")
+                public ResponseEntity<byte[]> export(
+                    @RequestParam(required = false) String search,
+                    @RequestParam Map<String, String> filters) {
+                        List<{{entity.name}}DTO> items = {{entity.serviceVar}}.findAllForExport(search, filters);
+                            List<Object[]> rows = items.stream()
+                                .map(i -> new Object[]{ {{#each entity.exportColumns}}i.get{{this.nameCap}}(){{#unless
+                                @last}}, {{/unless}}{{/each}} })
+                                .toList();
+                                return ExcelExporter.asResponse("{{entity.urlPath}}.xlsx", "{{entity.tagLabel}}",
+                                new String[]{ {{#each entity.exportColumns}}"{{this.label}}"{{#unless @last}},
+                                {{/unless}}{{/each}} }, rows);
+                                }
+                                {{/if}}
+                                {{/if}}
+
+                                {{#if entity.features.pagination}}
+                                {{#if entity.securityOperations.consultation}}
+                                @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
+                                'CONSULTATION')")
+                                @GetMapping("/all")
+                                public ResponseEntity<List<{{entity.name}}DTO>> getAllUnpaged() {
+                                    return ResponseEntity.ok({{entity.serviceVar}}.findAll());
+                                    }
+                                    {{/if}}
+                                    {{/if}}
+
+                                    {{#if entity.securityOperations.consultation}}
+                                    @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
+                                    'CONSULTATION')")
+                                    @GetMapping("/{id}")
+                                    public ResponseEntity<{{entity.name}}DTO> getById(@PathVariable {{entity.idType}} id) {
+                                        return ResponseEntity.ok({{entity.serviceVar}}.findById(id));
+                                        }
+                                        {{/if}}
+
+                                        {{#if entity.securityOperations.ajout}}
+                                        @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
+                                        'AJOUT')")
+                                        @PostMapping
+                                        public ResponseEntity<{{entity.name}}DTO> create({{#if
+                                            entity.features.validation}}@Valid {{/if}}@RequestBody {{entity.name}}DTO
+                                            dto) {
+                                            {{entity.name}}DTO created = {{entity.serviceVar}}.create(dto);
+                                            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+                                            }
+                                            {{/if}}
+
+                                            {{#if entity.securityOperations.modification}}
+                                            @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
+                                            'MODIFICATION')")
+                                            @PutMapping("/{id}")
+                                            public ResponseEntity<{{entity.name}}DTO> update(@PathVariable {{entity.idType}} id,
+                                                {{#if entity.features.validation}}@Valid {{/if}}@RequestBody
+                                                {{entity.name}}DTO dto) {
+                                                return ResponseEntity.ok({{entity.serviceVar}}.update(id, dto));
+                                                }
+                                                {{/if}}
+
+                                                {{#if entity.securityOperations.suppression}}
+                                                @PreAuthorize("@accessGuard.can(authentication,
+                                                '{{entity.permissionCode}}', 'SUPPRESSION')")
+                                                @DeleteMapping("/{id}")
+                                                public ResponseEntity<Void> delete(@PathVariable {{entity.idType}} id) {
+                                                    {{entity.serviceVar}}.delete(id);
+                                                    return ResponseEntity.noContent().build();
+                                                    }
+                                                    {{/if}}
+                                                    }

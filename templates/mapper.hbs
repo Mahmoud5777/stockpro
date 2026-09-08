@@ -1,0 +1,45 @@
+package com.stockpro.mapper.{{entity.module}};
+
+import com.stockpro.dto.{{entity.module}}.{{entity.name}}DTO;
+import com.stockpro.entity.{{entity.module}}.{{entity.name}};
+{{#each entity.manyToOneImports}}
+import com.stockpro.entity.{{this.module}}.{{this.name}};
+{{/each}}
+import org.springframework.stereotype.Component;
+
+@Component
+public class {{entity.name}}Mapper {
+
+    public {{entity.name}}DTO toDto({{entity.name}} entity) {
+        if (entity == null) {
+            return null;
+        }
+        {{entity.name}}DTO.{{entity.name}}DTOBuilder builder = {{entity.name}}DTO.builder()
+                .{{entity.idField}}(entity.get{{entity.idFieldCap}}())
+                {{#each entity.fields}}
+                .{{this.name}}(entity.get{{this.nameCap}}())
+                {{/each}}
+                {{#each entity.manyToOne}}
+                .{{this.fieldName}}Id(entity.get{{this.fieldNameCap}}() != null ? entity.get{{this.fieldNameCap}}().get{{this.targetIdFieldCap}}() : null)
+                {{/each}}
+                {{#each entity.relationIds}}
+                .{{this.fieldName}}Id(entity.get{{this.fieldNameCap}}Id())
+                {{/each}};
+        return builder.build();
+    }
+
+    public {{entity.name}} toEntity({{entity.name}}DTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        {{entity.name}}.{{entity.name}}Builder builder = {{entity.name}}.builder()
+                .{{entity.idField}}(dto.get{{entity.idFieldCap}}())
+                {{#each entity.fields}}
+                .{{this.name}}(dto.get{{this.nameCap}}())
+                {{/each}}
+                {{#each entity.relationIds}}
+                .{{this.fieldName}}Id(dto.get{{this.fieldNameCap}}Id())
+                {{/each}};
+        return builder.build();
+    }
+}

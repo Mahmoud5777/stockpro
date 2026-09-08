@@ -1,0 +1,83 @@
+{
+  "entity": {
+    "module": "administration",
+    "name": "Role",
+    "tableName": "ROLE",
+    "idField": "idRl",
+    "idFieldCap": "IdRl",
+    "idColumn": "ID_RL",
+    "repoVar": "roleRepository",
+    "serviceVar": "roleService",
+    "urlPath": "roles",
+    "tagLabel": "Rôles",
+    "tagLabelLower": "rôles",
+    "permissionCode": "ADMIN_ROLES",
+    "filterKey": "ROLE",
+    "defaultSortField": "libelle",
+    "hasWriteOnlyField": false,
+    "hasValidation": true,
+    "needsLocalDate": false,
+    "needsPage": true,
+    "hasOneToMany": true,
+    "hasDateCreation": false,
+    "fields": [
+      {
+        "name": "codeRole",
+        "nameCap": "CodeRole",
+        "columnName": "COD_ROLE",
+        "javaType": "String",
+        "length": 30,
+        "unique": true,
+        "required": true,
+        "errorMessage": "Le code rôle est obligatoire",
+        "maxLength": 30
+      },
+      {
+        "name": "libelle",
+        "nameCap": "Libelle",
+        "columnName": "LIB_ROLE",
+        "javaType": "String",
+        "length": 100,
+        "required": true,
+        "errorMessage": "Le libellé est obligatoire",
+        "maxLength": 100
+      },
+      {
+        "name": "description",
+        "nameCap": "Description",
+        "columnName": "DESCRIPTION",
+        "javaType": "String",
+        "columnDefinition": "TEXT"
+      }
+    ],
+    "updatableFields": [
+      { "nameCap": "CodeRole" },
+      { "nameCap": "Libelle" },
+      { "nameCap": "Description" }
+    ],
+    "manyToOne": [],
+    "oneToMany": [
+      {
+        "relationName": "AffecteRole",
+        "target": "UserSiteDroits",
+        "mappedBy": "role",
+        "fieldName": "userSiteDroits",
+        "orphanRemoval": false
+      },
+      {
+        "relationName": "AppartientGroupe",
+        "target": "GroupeRole",
+        "mappedBy": "role",
+        "fieldName": "groupeRoles",
+        "orphanRemoval": true
+      }
+    ],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": [
+      { "nameCap": "CodeRole", "label": "Code" },
+      { "nameCap": "Libelle", "label": "Libellé" },
+      { "nameCap": "Description", "label": "Description" }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "entity": {
+    "module": "crm",
+    "name": "Customer",
+    "tableName": "CLIENT",
+    "idField": "id",
+    "idColumn": "ID_CLIENT",
+    "urlPath": "clients",
+    "idType": "UUID",
+    "fields": [
+      { "name": "fullName", "javaType": "String", "length": 150, "required": true, "errorMessage": "Le nom complet est obligatoire" },
+      { "name": "email", "javaType": "String", "length": 150, "unique": true }
+    ],
+    "manyToOne": [],
+    "oneToMany": [],
+    "exportColumns": [
+      { "nameCap": "FullName", "label": "Nom complet" },
+      { "nameCap": "Email", "label": "Email" }
+    ],
+    "securityLevel": "medium"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "module": "stock",
+    "name": "Category",
+    "tableName": "CATEGORIE",
+    "idField": "id",
+    "idColumn": "ID_CATEGORIE",
+    "urlPath": "categories",
+    "idType": "UUID",
+    "fields": [
+      { "name": "name", "javaType": "String", "length": 100, "required": true, "errorMessage": "Le nom est obligatoire" }
+    ],
+    "manyToOne": [],
+    "oneToMany": [],
+    "exportColumns": [
+      { "nameCap": "Name", "label": "Nom" }
+    ],
+    "securityLevel": "medium"
+  }
+}

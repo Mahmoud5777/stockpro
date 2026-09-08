@@ -1,0 +1,23 @@
+{
+  "entity": {
+    "module": "stock",
+    "name": "Product",
+    "tableName": "PRODUIT",
+    "idField": "id",
+    "idColumn": "ID_PRODUIT",
+    "urlPath": "produits",
+    "idType": "UUID",
+    "fields": [
+      { "name": "name", "javaType": "String", "length": 150, "required": true, "errorMessage": "Le nom est obligatoire" },
+      { "name": "price", "javaType": "Double" },
+      { "name": "active", "javaType": "Boolean" }
+    ],
+    "manyToOne": [],
+    "oneToMany": [],
+    "exportColumns": [
+      { "nameCap": "Name", "label": "Nom" },
+      { "nameCap": "Price", "label": "Prix" }
+    ],
+    "securityLevel": "high"
+  }
+}

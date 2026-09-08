@@ -1,0 +1,19 @@
+{
+  "name": "stockpro-backend-generator",
+  "version": "0.1.0",
+  "description": "Handlebars-based backend generator for the stockpro-yacine Spring Boot project",
+  "main": "generate.js",
+  "scripts": {
+    "generate": "node generate.js",
+    "generate-frontend": "node generate-frontend.js",
+    "test": "node --test",
+    "wizard": "node cli.js",
+    "test-app": "node verify-app.js",
+    "pack:frontend": "node tools/pack-frontend.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "handlebars": "^4.7.9"
+  },
+  "author": ""
+}

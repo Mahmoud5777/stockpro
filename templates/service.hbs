@@ -1,0 +1,29 @@
+package com.stockpro.service.{{entity.module}};
+
+import com.stockpro.dto.{{entity.module}}.{{entity.name}}DTO;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Map;
+{{#if (eq entity.idType "UUID")}}
+import java.util.UUID;
+{{/if}}
+
+public interface {{entity.name}}Service {
+List<{{entity.name}}DTO> findAll();
+    {{#if entity.features.pagination}}
+    Page<{{entity.name}}DTO> findAll(Pageable pageable);
+        {{/if}}
+        {{#if entity.features.search}}
+        Page<{{entity.name}}DTO> findAll(String search, Map<String, String> filters, Pageable pageable);
+                {{/if}}
+                {{#if entity.features.export}}
+                List<{{entity.name}}DTO> findAllForExport(String search, Map<String, String> filters);
+                        {{/if}}
+                        {{entity.name}}DTO findById({{entity.idType}} id);
+                        {{entity.name}}DTO create({{entity.name}}DTO dto);
+                        {{entity.name}}DTO update({{entity.idType}} id, {{entity.name}}DTO dto);
+                        void delete({{entity.idType}} id);
+                        }

@@ -1,0 +1,24 @@
+package com.stockpro.repository.{{entity.module}};
+
+import com.stockpro.entity.{{entity.module}}.{{entity.name}};
+{{#each entity.customFinderEntityImports}}
+import com.stockpro.entity.{{entity.module}}.{{this}};
+{{/each}}
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
+
+{{#if entity.customFinders.length}}
+import java.util.List;
+import java.util.Optional;
+{{/if}}
+{{#if (eq entity.idType "UUID")}}
+import java.util.UUID;
+{{/if}}
+
+@Repository
+public interface {{entity.name}}Repository extends JpaRepository<{{entity.name}}, {{entity.idType}}>, JpaSpecificationExecutor<{{entity.name}}> {
+    {{#each entity.customFinders}}
+    {{this.returnType}} {{this.methodName}}({{this.paramType}} {{this.paramName}});
+    {{/each}}
+}
