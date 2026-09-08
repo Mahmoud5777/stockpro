@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - run: npm ci
+      - run: npm test
+      - run: npm run generate -- examples/stock-crm "$RUNNER_TEMP/stockpro-generated"
+      - run: mvn -q -f "$RUNNER_TEMP/stockpro-generated/server/pom.xml" compile
+      - run: npm run generate-frontend -- examples/stock-crm "$RUNNER_TEMP/stockpro-generated/client"
+      - run: npm install
+        working-directory: ${{ runner.temp }}/stockpro-generated/client
+      - run: npx tsc --noEmit
+        working-directory: ${{ runner.temp }}/stockpro-generated/client
