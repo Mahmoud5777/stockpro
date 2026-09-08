@@ -89,7 +89,7 @@ test("generate-frontend with next emits a runnable scaffold from schemas", () =>
   const cli = path.join(root, "generate-frontend.js");
   const res = spawnSync(
     process.execPath,
-    [cli, path.join(root, "generated-app/schemas"), out, "--frontend=next"],
+    [cli, path.join(root, "examples/stock-crm"), out, "--frontend=next"],
     { encoding: "utf8" }
   );
   assert.equal(res.status, 0, res.stderr || res.stdout);
@@ -122,7 +122,7 @@ test("a custom .spack template pack drives a generated Next.js client", () => {
   const cli = path.join(root, "generate-frontend.js");
   const res = spawnSync(
     process.execPath,
-    [cli, path.join(root, "generated-app/schemas"), out, "--frontend=next", `--frontend-template=${packOut}`],
+    [cli, path.join(root, "examples/stock-crm"), out, "--frontend=next", `--frontend-template=${packOut}`],
     { encoding: "utf8" }
   );
   assert.equal(res.status, 0, res.stderr || res.stdout);

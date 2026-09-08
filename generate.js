@@ -20,6 +20,7 @@ Handlebars.registerHelper("ne", (left, right) => left !== right);
 Handlebars.registerHelper("lowerFirst", (value) => value.charAt(0).toLowerCase() + value.slice(1));
 Handlebars.registerHelper("capitalize", (value) => value.charAt(0).toUpperCase() + value.slice(1));
 Handlebars.registerHelper("json", (value) => JSON.stringify(value));
+Handlebars.registerHelper("add", (left, right) => Number(left) + Number(right));
 
 const TEMPLATES_DIR = path.join(__dirname, "templates");
 const VALID_ID_TYPES = ["UUID", "String", "Long"];
@@ -182,6 +183,9 @@ function loadTemplates(selectedLayers = [...LAYERS, ...CORE_LAYERS]) {
 function toKebabCase(value) {
   return value.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
 }
+function defaultPermissionCode(name) {
+  return `ADMIN_${name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
+}
 
 function javaTypeToTsType(javaType) {
   return {
@@ -230,6 +234,8 @@ function normalizeEntity(entity, source) {
     customFinders: entity.customFinders || [],
     exportColumns: entity.exportColumns || [],
     kebabName: entity.kebabName || toKebabCase(entity.name),
+    permissionCode: entity.permissionCode || defaultPermissionCode(entity.name),
+    defaultSortField: entity.defaultSortField || entity.fields?.[0]?.name || entity.idField,
     tsType: entity.tsType || javaTypeToTsType(entity.idType || "UUID"),
   };
 
@@ -278,8 +284,8 @@ function normalizeEntity(entity, source) {
   };
 
   const usesList = normalized.features.pagination ||
-      normalized.features.export ||
-      normalized.securityOperations.consultation;
+    normalized.features.export ||
+    normalized.securityOperations.consultation;
   const usesMap = normalized.features.pagination || normalized.features.export;
   normalized.needsListImport = Boolean(usesList);
   normalized.needsMapImport = Boolean(usesMap);
@@ -394,6 +400,18 @@ function writeFile(filePath, content, options, report) {
   console.log(`  wrote           ${filePath}`);
 }
 
+function writeGeneratedManifest(outputRoot, entities, options, report) {
+  const manifestPath = path.join(outputRoot, "project.json");
+  if (fs.existsSync(manifestPath)) return;
+  writeFile(manifestPath, `${JSON.stringify({
+    targets: ["backend"],
+    entityCount: entities.length,
+    generationOrder: entities.map((entity) => entity.name),
+    schemaVersion: "1.0.0",
+    generatedBy: "stockpro-backend-generator",
+  }, null, 2)}\n`, options, report);
+}
+
 function generateEntity(entity, compiled, outputRoot, options, report, schemaOutputPaths) {
   const javaRoot = path.join(outputRoot, "src/main/java/com/stockpro");
   console.log(`\n${entity.name} (${entity.module})`);
@@ -410,12 +428,12 @@ function generateEntity(entity, compiled, outputRoot, options, report, schemaOut
 // Core layers that would overwrite a schema-driven entity on the same path are skipped,
 // so the schema definition of an entity always wins consistently (e.g. an admin entity
 // such as Role that the input schema also models).
-function generateCore(compiled, outputRoot, options, report, schemaOutputPaths) {
+function generateCore(compiled, outputRoot, options, report, schemaOutputPaths, entities) {
   console.log("\nCore (auth / infrastructure)");
   for (const layer of CORE_LAYERS) {
     const render = compiled[layer.template];
     if (!render) continue;
-    const content = render({});
+    const content = render({ entities });
     const outFile = path.normalize(path.join(outputRoot, layer.outPath()));
     if (schemaOutputPaths && schemaOutputPaths.has(outFile)) {
       if (options.dryRun) {
@@ -474,6 +492,7 @@ function main() {
     const warnings = validateSchemaSet(schemas, { strict: strictRelations });
     for (const warning of warnings) console.warn(`Warning: ${warning}`);
 
+    const backendRoot = path.join(outputDir, "server");
     for (const entity of schemas) {
       const key = `${entity.module}.${entity.name}`;
       if (names.has(key)) {
@@ -481,9 +500,10 @@ function main() {
       }
       names.add(key);
       if (verbose) console.log(`Features: ${JSON.stringify(entity.features)}`);
-      generateEntity(entity, compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
+      generateEntity(entity, compiled, backendRoot, { force, dryRun }, report, schemaOutputPaths);
     }
-    generateCore(compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
+    generateCore(compiled, backendRoot, { force, dryRun }, report, schemaOutputPaths, schemas);
+    writeGeneratedManifest(outputDir, schemas, { force, dryRun }, report);
     console.log(`\nSummary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

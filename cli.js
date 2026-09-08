@@ -45,7 +45,7 @@ function askInterface() {
         process.stdout.write(prompt);
         callback(answers[index++] || "");
       },
-      close() {},
+      close() { },
     };
   }
   return readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -77,7 +77,7 @@ function choose(rl, label, options, defaultValueIndex = 0) {
     const loop = () => {
       rl.question(prompt, (answer) => {
         const v = answer.trim();
-        if (v === "" ) return resolve(defaultVal);
+        if (v === "") return resolve(defaultVal);
         const idx = options.findIndex((o) => o.toLowerCase() === v.toLowerCase());
         if (idx >= 0) return resolve(options[idx]);
         console.log(`    Choix invalide. Options: ${options.join(", ")}`);
@@ -351,7 +351,7 @@ async function runWizard() {
   const schemaDir = path.join(absoluteOutput, "schemas");
   fs.mkdirSync(schemaDir, { recursive: true });
   const targets = target === "both" ? ["backend", "frontend"] : [target];
-  const serverRoot = target === "frontend" ? null : path.join(absoluteOutput, target === "both" ? "server" : "");
+  const serverRoot = target === "frontend" ? null : path.join(absoluteOutput, "server");
   const clientRoot = target === "backend" ? null : path.join(absoluteOutput, target === "both" ? "client" : "");
   const manifest = {
     targets,
@@ -385,7 +385,7 @@ async function runWizard() {
 
   console.log(`\nModèle enregistré dans ${absoluteOutput}`);
   if (serverRoot) {
-    const backendResult = spawnSync(process.execPath, [path.join(root, "generate.js"), schemaDir, serverRoot, "--strict-relations"], { stdio: "inherit" });
+    const backendResult = spawnSync(process.execPath, [path.join(root, "generate.js"), schemaDir, absoluteOutput, "--strict-relations"], { stdio: "inherit" });
     if (backendResult.status !== 0) throw new Error("La génération du backend a échoué; consultez les messages ci-dessus.");
   }
   if (clientRoot) {
@@ -408,7 +408,7 @@ async function runWizard() {
 function runInstructions(parts) {
   console.log("\nExécution de l'application générée :");
   if (parts.server) {
-    console.log(`  Backend :  cd "${parts.server}" && mvn spring-boot:run   ->  http://localhost:8080`);
+    console.log(`  Backend :  cd "${parts.server}" && mvn spring-boot:run   ->  http://localhost:8081`);
   }
   if (parts.client) {
     console.log(`  Frontend : cd "${parts.client}" && npm install && npm run dev  ->  http://localhost:3000`);
@@ -423,7 +423,7 @@ function writeDevScripts(absoluteOutput, serverRoot, clientRoot) {
     const ps1 = [
       "# StockPro generated app - development launcher",
       `param([switch]$NoInstall)`,
-      `Write-Host "Starting backend on :8080..."`,
+      `Write-Host "Starting backend on :8081..."`,
       `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, serverRoot)}\\\`"; mvn spring-boot:run")`,
     ];
     if (clientRoot) {
@@ -495,7 +495,7 @@ function launchGenerated(absoluteOutput, { serverRoot, clientRoot }) {
     }
   }
   if (serverRoot) {
-    console.log(`  Démarrage du backend (Spring Boot) sur http://localhost:8080 ...`);
+    console.log(`  Démarrage du backend (Spring Boot) sur http://localhost:8081 ...`);
     spawn("mvn", ["spring-boot:run"], { cwd: serverRoot, stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
   }
   console.log("\nLes serveurs démarrent dans des fenêtres séparées. Arrêtez-les avec Ctrl+C dans chaque fenêtre.");

@@ -54,17 +54,17 @@ Each line of `answers.txt` answers one prompt; empty lines accept defaults.
 ## Generating from schemas directly
 
 ```bash
-# generate into ./generated-app using the bundled example schemas
-npm run generate -- generated-app/schemas generated-app
+# generate into ./scratch using the bundled example schemas
+npm run generate -- examples/stock-crm scratch
 
 # overwrite existing files
-node generate.js generated-app/schemas generated-app --force
+node generate.js examples/stock-crm scratch --force
 
 # preview without writing
-node generate.js generated-app/schemas generated-app --dry-run
+node generate.js examples/stock-crm scratch --dry-run
 
 # fail fast if a relation points to a target not present in the schema set
-node generate.js generated-app/schemas generated-app --strict-relations
+node generate.js examples/stock-crm scratch --strict-relations
 ```
 
 ### CLI options
@@ -243,7 +243,7 @@ A full-stack output (`targets: ["backend", "frontend"]`) looks like:
       util/ExcelExporter.java
   client/                          # Next.js frontend
     package.json
-    next.config.mjs                # rewrites /api -> http://localhost:8080/api
+    next.config.mjs                # Next.js configuration
     src/
       lib/entities-registry.ts      # generated from the schemas
       features/shared/EntityCrud.tsx
@@ -274,16 +274,16 @@ Targets:
 
 | Target    | Layout                                                            |
 | --------- | ----------------------------------------------------------------- |
-| `backend` | `<output>/` contains the Spring Boot project (unchanged).         |
-| `frontend`| `<output>/` contains the client project.                          |
+| `backend` | `<output>/server` contains the Spring Boot project.                |
+| `frontend`| `<output>/client` contains the client project.                    |
 | `both`    | `<output>/server` (backend) + `<output>/client` (frontend) + unified `project.json`. |
 
 The frontend reuses the exact same `entity` model as the backend. `idType`
 maps to `string` (`UUID`/`String`) or `number` (`Long`); `javaType` maps to a
 TypeScript type; `manyToOne` becomes a select bound to the target id type; the
 shared `EntityCrud` harness renders a list + form per entity and calls
-`/api/<urlPath>`. `next.config.mjs` rewrites `/api/*` to the backend, so the
-client talks to `http://localhost:8080` during development.
+`/api/<urlPath>`. The generated client calls the backend using
+`NEXT_PUBLIC_API_URL`, defaulting to `http://localhost:8081`.
 
 Implemented template packs:
 
@@ -297,14 +297,14 @@ Run it:
 ```bash
 npm run wizard          # choose backend / frontend / both and the stack
 # or headless with a specific template pack:
-node generate-frontend.js generated-app/schemas generated-app/client \
+node generate-frontend.js examples/stock-crm scratch/client \
     --frontend=next --frontend-template=path/to/my.spack
 ```
 
 Verify (backend, frontend, or both):
 
 ```bash
-npm run test-app -- generated-app
+npm run test-app -- scratch
 ```
 
 ## Template packs (.spack)
@@ -369,11 +369,78 @@ node cli.js < answers.txt --skip-run  # generate only
 Steps required once per machine:
 
 ```bash
-cd <output>/server && mvn spring-boot:run   # backend  -> http://localhost:8080  (needs PostgreSQL)
+cd <output>/server && mvn spring-boot:run   # backend -> http://localhost:8081 (H2 by default)
 cd <output>/client && npm install && npm run dev
 ```
 
-Log in with the seeded account `admin / admin123`.
+The default local database is an H2 in-memory database, so the generated app
+boots without a PostgreSQL service. Data is reset when the backend stops. To
+use PostgreSQL, set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and optionally
+`SERVER_PORT` before starting Spring Boot. Set `NEXT_PUBLIC_API_URL` to the
+same backend URL when the frontend runs on another machine or port.
+
+The local seed account is `admin / admin123`. Change or disable it before
+production use.
+
+## Generator hardening plan
+
+The following behavior is now generated from the source templates and is part
+of the generator contract. This prevents the runtime failures found while
+validating the generated StockPro app:
+
+1. **One backend connection contract**
+   - Spring Boot defaults to H2 on port `8081` for a zero-setup local run.
+   - PostgreSQL remains supported through `DB_URL`, `DB_USERNAME`, and
+     `DB_PASSWORD` environment variables.
+   - H2 is included as a runtime dependency in generated `pom.xml`.
+
+2. **One frontend API contract**
+   - Axios defaults to `NEXT_PUBLIC_API_URL=http://localhost:8081`.
+   - The backend CORS default accepts local development origins on any
+     `localhost` or `127.0.0.1` port; deployments should override it with
+     `CORS_ALLOWED_ORIGINS`.
+
+3. **Complete generated navigation**
+   - The route group `(dashboard)` is not treated as a URL segment.
+   - A real protected `/dashboard` route and layout are generated.
+   - Login and the sidebar both navigate to `/dashboard`.
+
+4. **Schema-driven security**
+   - Every generated entity gets a normalized `permissionCode` when one is not
+     supplied.
+   - `DataInitializer` seeds each schema entity as a functionality and grants
+     all rights to the local `SUPERADMIN` profile.
+   - Frontend registry permission codes come from the same normalized schema.
+
+5. **Schema-driven pagination**
+   - `defaultSortField` may be supplied in a schema.
+   - If omitted, the first declared field is used, then the id field.
+   - Validation rejects an unknown sort field before Java is generated, avoiding
+     Spring Data errors such as `No property 'nom' found for type 'Product'`.
+
+6. **Verification before delivery**
+   - Validate schemas with strict relations.
+   - Generate into a clean directory.
+   - Compile the backend and type-check/build the frontend.
+   - Start both services and verify login, `/api/auth/me`, and one list endpoint
+     per generated entity.
+
+### Recommended generator acceptance check
+
+```bash
+# from the generator repository
+npm test
+node generate.js schemas <clean-output> --force --strict-relations
+node verify-app.js <clean-output>
+cd <clean-output> && mvn -q -DskipTests compile
+cd client && npx tsc --noEmit && npm run build
+```
+
+For a live smoke test, start the backend and frontend, log in with the seed
+account, confirm the browser reaches `/dashboard`, then confirm every generated
+entity list returns HTTP `200`. A table with zero rows is valid for a fresh H2
+database; HTTP `403` indicates a permission seed mismatch and HTTP `500` from a
+list endpoint indicates an invalid generated sort/property name.
 
 ## Verifying a generated application
 
@@ -400,7 +467,7 @@ verification, the wizard output, frontend generation, and the template-pack
 
 ## Example domain model
 
-The bundled `generated-app/schemas` models a small stock/crm domain:
+The bundled `examples/stock-crm` schemas model a small stock/crm domain:
 
 `Product` (module `stock`), `Category` (module `stock`), and `Customer`
 (module `crm`), with `Product → Category` (many-to-one) and the relations, ids

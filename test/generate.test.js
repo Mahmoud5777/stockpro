@@ -56,13 +56,13 @@ test("dry-run plans files without writing them", () => {
     const result = execFileSync(process.execPath, [generator, schema, directory, "--dry-run"], { encoding: "utf8" });
     assert.match(result, /Summary: 0 written, 0 skipped, \d+ planned/);
     assert.match(result, /Role\.java/);
-    assert.equal(fs.existsSync(path.join(directory, "src")), false);
+    assert.equal(fs.existsSync(path.join(directory, "server")), false);
 });
 
 test("generates, skips, and force-overwrites the expected files", () => {
     const directory = temporaryDirectory();
     execFileSync(process.execPath, [generator, schema, directory], { stdio: "pipe" });
-    const role = path.join(directory, "src", "main", "java", "com", "stockpro", "entity", "administration", "Role.java");
+    const role = path.join(directory, "server", "src", "main", "java", "com", "stockpro", "entity", "administration", "Role.java");
     assert.equal(fs.existsSync(role), true);
     const original = fs.readFileSync(role, "utf8");
     fs.writeFileSync(role, "manual change\n");
@@ -101,7 +101,7 @@ test("supports UUID, String and Long identifier types", () => {
         const out = temporaryDirectory();
         execFileSync(process.execPath, [generator, dir, out], { stdio: "pipe" });
         const entityFile = fs.readFileSync(
-            path.join(out, "src/main/java/com/stockpro/entity/administration/Sample.java"), "utf8");
+            path.join(out, "server/src/main/java/com/stockpro/entity/administration/Sample.java"), "utf8");
         assert.match(entityFile, new RegExp(`private ${idType} id;`));
         if (idType === "UUID") assert.match(entityFile, /UUID\.randomUUID\(\)/);
         if (idType === "Long") assert.match(entityFile, /System\.currentTimeMillis\(\)/);
@@ -131,11 +131,11 @@ test("resolves many-to-one relations with injected repositories", () => {
     const out = temporaryDirectory();
     execFileSync(process.execPath, [generator, dir, out], { stdio: "pipe" });
     const impl = fs.readFileSync(
-        path.join(out, "src/main/java/com/stockpro/service/administration/impl/PostServiceImpl.java"), "utf8");
+        path.join(out, "server/src/main/java/com/stockpro/service/administration/impl/PostServiceImpl.java"), "utf8");
     assert.match(impl, /private final UserRepository userRepository;/);
     assert.match(impl, /resolveUser\(/);
     const dto = fs.readFileSync(
-        path.join(out, "src/main/java/com/stockpro/dto/administration/PostDTO.java"), "utf8");
+        path.join(out, "server/src/main/java/com/stockpro/dto/administration/PostDTO.java"), "utf8");
     assert.match(dto, /private UUID authorId;/);
 });
 
@@ -166,8 +166,10 @@ test("security levels control which operations are exposed", () => {
     assert.equal(high.suppression, true);
 });
 
-test("generated-app passes formal verification", () => {
-    const res = spawnSync(process.execPath, [path.join(root, "verify-app.js"), "generated-app"],
+test("a generated backend passes formal verification", () => {
+    const out = temporaryDirectory();
+    execFileSync(process.execPath, [generator, path.join(root, "examples", "stock-crm"), out], { stdio: "pipe" });
+    const res = spawnSync(process.execPath, [path.join(root, "verify-app.js"), out],
         { encoding: "utf8", cwd: root });
     assert.equal(res.status, 0, res.stderr);
     assert.match(res.stdout, /App test passed/);
@@ -191,5 +193,5 @@ test("wizard produces a valid project model", () => {
     const model = JSON.parse(fs.readFileSync(project, "utf8"));
     assert.deepEqual(model.entityOrder, ["Sample"]);
     assert.deepEqual(model.generationOrder, ["Sample"]);
-    assert.equal(fs.existsSync(path.join(out, "src/main/java/com/stockpro/entity/administration/Sample.java")), true);
+    assert.equal(fs.existsSync(path.join(out, "server/src/main/java/com/stockpro/entity/administration/Sample.java")), true);
 });
