@@ -27,7 +27,9 @@ function findFiles(directory, fileName) {
     if (!fs.existsSync(directory)) return [];
     return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
         const candidate = path.join(directory, entry.name);
-        return entry.isDirectory() ? findFiles(candidate, fileName) : entry.name === fileName ? [candidate] : [];
+        return entry.isDirectory()
+            ? findFiles(candidate, fileName)
+            : (fileName === "" || entry.name === fileName) ? [candidate] : [];
     });
 }
 
@@ -53,15 +55,12 @@ const clientRoot = targets.includes("frontend")
     : null;
 let frontendFiles = 0;
 if (clientRoot && fs.existsSync(clientRoot)) {
-    for (const name of manifest.generationOrder) {
-        for (const file of [`${name}.model.ts`, `${name}.service.ts`]) {
-            const matches = findFiles(clientRoot, file);
-            for (const candidate of matches) {
-                frontendFiles += 1;
-                const content = fs.readFileSync(candidate, "utf8");
-                if (content.includes("{{") || content.includes("}}")) missing.push(`${candidate} contains template placeholders`);
-            }
-        }
+    const registry = path.join(clientRoot, "src", "lib", "entities-registry.ts");
+    if (!fs.existsSync(registry)) missing.push(`missing frontend registry: ${registry}`);
+    for (const candidate of findFiles(clientRoot, "")) {
+        frontendFiles += 1;
+        const content = fs.readFileSync(candidate, "utf8");
+        if (content.includes("{{") || content.includes("}}")) missing.push(`${candidate} contains template placeholders`);
     }
 }
 
