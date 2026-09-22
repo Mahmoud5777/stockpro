@@ -219,6 +219,22 @@ When `features.security` is enabled every mutation endpoint is protected; when
 it is disabled no `@PreAuthorize` is generated. Permission codes follow the
 pattern `<permissionPrefix>_<ENTITY>` (e.g. `ADMIN_USER`).
 
+## Built-in (reserved) entity names
+
+The generator ships a fixed **auth core** — `User`, `Role`, `RefreshToken`,
+`Site`, `Groupe`, `Profil`, `Application`, `Fonctionnalite`, `UserSite`,
+`UserSiteDroits`, `GroupeRole`, `GroupeProfil`, `ProfilDroit` — with JWT
+login/refresh, `AccessGuard` and a seeded admin account. If a wizard or schema
+entity reuses one of these names, the **built-in implementation wins**: the
+per-entity layers (entity, DTO, repository, service, mapper, controller) are
+skipped (`skip (core)`) and the auth-core classes are emitted unchanged. So
+naming an entity `User` keeps `login` / `motPasse` / `etatCompte` and
+`UserRepository.findByLogin(...)` instead of generating an empty `User` class.
+
+The wizard prints a notice when you type a reserved name. The frontend registry
+uses the built-in column set and the real identifier (`idUtil`, `idRl`, …) so
+the generated CRUD panel manages the built-in class correctly.
+
 ## Generated application structure
 
 A full-stack output (`targets: ["backend", "frontend"]`) looks like:
@@ -425,6 +441,13 @@ validating the generated StockPro app:
    - Start both services and verify login, `/api/auth/me`, and one list endpoint
      per generated entity.
 
+7. **Built-in auth names cannot be overwritten**
+   - Schema entities named after auth-core classes (`User`, `Role`, `Site`, …)
+     are ignored for per-entity generation; the built-in secure implementation
+     wins, so the generated app always boots and compiles.
+   - The frontend registry mirrors the built-in fields and primary-key name for
+     these entities.
+
 ### Recommended generator acceptance check
 
 ```bash
@@ -452,6 +475,10 @@ placeholder:
 ```bash
 npm run test-app -- generated-app
 ```
+
+A schema entity named after an auth-core class (e.g. `User`) intentionally
+yields `skip (core)` files and uses the built-in implementation — that is
+expected and is what keeps the generated app compiling and bootable.
 
 ## Running the test suite
 

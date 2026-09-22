@@ -22,7 +22,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const Handlebars = require("handlebars");
-const { loadSchemas } = require("./generate");
+const { loadSchemas, canonicalizeReservedEntities } = require("./generate");
 const { validateFrontendManifest } = require("./validate");
 const { readZip } = require("./lib/zip");
 
@@ -31,9 +31,16 @@ const TEMPLATES_FRONTEND_DIR = path.join(ROOT, "templates", "frontend");
 const DEFAULT_PACK = path.join(TEMPLATES_FRONTEND_DIR, "packs", "next-tailwind.spack");
 
 const JAVA_TO_TS = {
-  String: "string", Integer: "number", Long: "number", Double: "number",
-  Float: "number", BigDecimal: "number", Boolean: "boolean",
-  LocalDate: "string", LocalDateTime: "string", UUID: "string",
+  String: "string",
+  Integer: "number",
+  Long: "number",
+  Double: "number",
+  Float: "number",
+  BigDecimal: "number",
+  Boolean: "boolean",
+  LocalDate: "string",
+  LocalDateTime: "string",
+  UUID: "string",
 };
 
 function tsType(javaType) {
@@ -41,7 +48,10 @@ function tsType(javaType) {
 }
 
 function kebab(name) {
-  return String(name).replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase();
+  return String(name)
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/[_\s]+/g, "-")
+    .toLowerCase();
 }
 
 function capitalize(value) {
@@ -54,8 +64,7 @@ function augmentForFrontend(entity) {
   e.kebabName = kebab(e.name);
   e.label = e.tagLabel || `${e.name}s`;
   e.permissionCode =
-    e.permissionCode ||
-    `ADMIN_${e.name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
+    e.permissionCode || `ADMIN_${e.name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
   for (const field of e.fields || []) {
     field.tsType = tsType(field.javaType);
     field.label = field.label || capitalize(field.name);
@@ -147,7 +156,7 @@ function main() {
   const args = process.argv.slice(2);
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: node generate-frontend.js <schemaDir> <clientRoot> [--frontend=next] [--frontend-template=<file.spack>] [--force]"
+      "Usage: node generate-frontend.js <schemaDir> <clientRoot> [--frontend=next] [--frontend-template=<file.spack>] [--force]",
     );
     return;
   }
@@ -177,10 +186,11 @@ function main() {
 
     const packPath = templateArg
       ? templateArg.split("=")[1]
-      : (frontendConfig.templatePath || DEFAULT_PACK);
+      : frontendConfig.templatePath || DEFAULT_PACK;
     const { packFiles, packJson } = loadPack(packPath);
 
     const schemas = loadSchemas(schemaInput);
+    canonicalizeReservedEntities(schemas);
     schemas.forEach(augmentForFrontend);
 
     const staging = stagedTemplates(packFiles, packJson, { entities: schemas });
@@ -188,14 +198,24 @@ function main() {
     copyDir(staging, clientRoot);
     fs.rmSync(staging, { recursive: true, force: true });
 
-    console.log(`\nFrontend summary: ${schemas.length} entities registered from pack '${packPath}'.`);
+    console.log(
+      `\nFrontend summary: ${schemas.length} entities registered from pack '${packPath}'.`,
+    );
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
   }
 }
 
-module.exports = { augmentForFrontend, kebab, tsType, loadPack, normalizeFrontendConfig, stagedTemplates, main };
+module.exports = {
+  augmentForFrontend,
+  kebab,
+  tsType,
+  loadPack,
+  normalizeFrontendConfig,
+  stagedTemplates,
+  main,
+};
 
 if (require.main === module) {
   main();

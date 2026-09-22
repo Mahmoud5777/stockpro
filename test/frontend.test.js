@@ -14,9 +14,9 @@ function temporaryDirectory() {
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]
-  );
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
 }
 
 test("augments entities with frontend type and label info", () => {
@@ -40,14 +40,42 @@ test("wizard both target writes a unified manifest and a runnable Next.js client
   const out = temporaryDirectory();
   // 8 app info, target=both, 7 features, 4 security, 4 frontend, count, 8 entity meta, 3 loops
   const answers = [
-    "", "", "", out, "", "", "", "",
+    "",
+    "",
+    "",
+    out,
+    "",
+    "",
+    "",
+    "",
     "both",
-    "", "", "", "", "", "", "",
-    "medium", "jwt", "Y", "",
-    "", "", "", "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "medium",
+    "jwt",
+    "Y",
+    "",
+    "",
+    "",
+    "",
+    "",
     "1",
-    "Sample", "", "", "", "", "", "", "",
-    "", "", "",
+    "Sample",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
   ];
   const cli = path.join(root, "cli.js");
   const res = spawnSync(process.execPath, [cli], {
@@ -61,19 +89,15 @@ test("wizard both target writes a unified manifest and a runnable Next.js client
 
   const backend = path.join(out, "server");
   assert.equal(
-    fs.existsSync(path.join(backend, "src/main/java/com/stockpro/entity/administration/Sample.java")),
-    true
+    fs.existsSync(
+      path.join(backend, "src/main/java/com/stockpro/entity/administration/Sample.java"),
+    ),
+    true,
   );
   const client = path.join(out, "client");
   assert.equal(fs.existsSync(path.join(client, "package.json")), true);
-  assert.equal(
-    fs.existsSync(path.join(client, "src/lib/entities-registry.ts")),
-    true
-  );
-  assert.equal(
-    fs.existsSync(path.join(client, "src/features/shared/EntityCrud.tsx")),
-    true
-  );
+  assert.equal(fs.existsSync(path.join(client, "src/lib/entities-registry.ts")), true);
+  assert.equal(fs.existsSync(path.join(client, "src/features/shared/EntityCrud.tsx")), true);
 
   let leaks = 0;
   for (const file of walk(client)) {
@@ -90,7 +114,7 @@ test("generate-frontend with next emits a runnable scaffold from schemas", () =>
   const res = spawnSync(
     process.execPath,
     [cli, path.join(root, "examples/stock-crm"), out, "--frontend=next"],
-    { encoding: "utf8" }
+    { encoding: "utf8" },
   );
   assert.equal(res.status, 0, res.stderr || res.stdout);
   assert.equal(fs.existsSync(path.join(out, "package.json")), true);
@@ -114,7 +138,7 @@ test("a custom .spack template pack drives a generated Next.js client", () => {
   const pack = spawnSync(
     process.execPath,
     [packer, staticDir, packOut, "--name=custom", "--framework=next", `--registry=${registry}`],
-    { encoding: "utf8" }
+    { encoding: "utf8" },
   );
   assert.equal(pack.status, 0, pack.stderr || pack.stdout);
 
@@ -122,13 +146,23 @@ test("a custom .spack template pack drives a generated Next.js client", () => {
   const cli = path.join(root, "generate-frontend.js");
   const res = spawnSync(
     process.execPath,
-    [cli, path.join(root, "examples/stock-crm"), out, "--frontend=next", `--frontend-template=${packOut}`],
-    { encoding: "utf8" }
+    [
+      cli,
+      path.join(root, "examples/stock-crm"),
+      out,
+      "--frontend=next",
+      `--frontend-template=${packOut}`,
+    ],
+    { encoding: "utf8" },
   );
   assert.equal(res.status, 0, res.stderr || res.stdout);
   assert.equal(fs.existsSync(path.join(out, "package.json")), true);
   assert.equal(fs.existsSync(path.join(out, "src/lib/entities-registry.ts")), true);
-  assert.equal(fs.existsSync(path.join(out, "pack.json")), false, "pack.json must not leak into the client");
+  assert.equal(
+    fs.existsSync(path.join(out, "pack.json")),
+    false,
+    "pack.json must not leak into the client",
+  );
   assert.equal(fs.existsSync(path.join(out, "src", "features", "shared", "EntityCrud.tsx")), true);
   const registryContent = fs.readFileSync(path.join(out, "src/lib/entities-registry.ts"), "utf8");
   assert.match(registryContent, /entitiesRegistry/);
@@ -139,4 +173,34 @@ test("a custom .spack template pack drives a generated Next.js client", () => {
     if (fs.readFileSync(file, "utf8").includes("{{")) leaks += 1;
   }
   assert.equal(leaks, 0);
+});
+
+test("generate-frontend maps reserved names to the built-in auth registry", () => {
+  const schemaDir = temporaryDirectory();
+  fs.writeFileSync(
+    path.join(schemaDir, "User.json"),
+    JSON.stringify({
+      entity: {
+        module: "administration",
+        name: "User",
+        tableName: "USER",
+        idField: "id",
+        idColumn: "USER_ID",
+        urlPath: "users",
+        fields: [],
+      },
+    }),
+  );
+  const out = temporaryDirectory();
+  const cli = path.join(root, "generate-frontend.js");
+  const res = spawnSync(process.execPath, [cli, schemaDir, out, "--frontend=next"], {
+    encoding: "utf8",
+  });
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  const registry = fs.readFileSync(path.join(out, "src/lib/entities-registry.ts"), "utf8");
+  assert.match(registry, /idField: "idUtil"/);
+  assert.match(registry, /name: "login"/);
+  assert.match(registry, /name: "etatCompte"/);
+  const crud = fs.readFileSync(path.join(out, "src/features/shared/EntityCrud.tsx"), "utf8");
+  assert.match(crud, /idField/);
 });

@@ -11,6 +11,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const readline = require("node:readline");
 const { spawnSync } = require("node:child_process");
+const { isCoreEntityName } = require("./generate");
 
 const root = __dirname;
 const IS_TTY = Boolean(process.stdin.isTTY);
@@ -45,7 +46,7 @@ function askInterface() {
         process.stdout.write(prompt);
         callback(answers[index++] || "");
       },
-      close() { },
+      close() {},
     };
   }
   return readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -54,11 +55,165 @@ function askInterface() {
 function ask(rl, label, defaultValue = "") {
   const suffix = defaultValue ? ` [${defaultValue}]` : "";
   return new Promise((resolve) =>
-    rl.question(`  ${label}${suffix}: `, (answer) => resolve((answer.trim() || defaultValue)))
+    rl.question(`  ${label}${suffix}: `, (answer) => resolve(answer.trim() || defaultValue)),
   );
 }
 
+const INTERACTIVE = (io = process) => io.stdin.isTTY && io.stdout.isTTY;
+
+// Renders one pass of the arrow-key menu.
+function menuDraw(label, options, index, stdout = process.stdout) {
+  stdout.write(`  ${label} (↑/↓ ou chiffre, Entrée pour valider)`);
+  stdout.write("\n");
+  options.forEach((option, i) => {
+    if (i === index) {
+      stdout.write(`    › ${option}   ◀\n`);
+    } else {
+      stdout.write(`      ${option}\n`);
+    }
+  });
+}
+
+// Cursor sits on the blank line just below the menu; move back to the label
+// line and wipe the whole block before redrawing.
+function menuErase(options, stdout = process.stdout) {
+  if (!stdout.isTTY) return;
+  readline.moveCursor(stdout, 0, -(options.length + 1));
+  readline.clearScreenDown(stdout);
+}
+
+// Interactive selection with ↑/↓ arrow keys (or a number shortcut) + Enter.
+// Falls back to plain typed answers when stdin is not a TTY (tests, pipes).
+function selectOptions(rl, label, options, defaultValueIndex = 0, io = process) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return Promise.resolve(undefined);
+  }
+  const maxIndex = Math.min(Math.max(defaultValueIndex, 0), options.length - 1);
+  const defaultVal = options[maxIndex];
+
+  return new Promise((resolve, reject) => {
+    if (!INTERACTIVE(io)) {
+      const prompt = `  ${label} (${options.join(" / ")}): `;
+      const loop = () => {
+        rl.question(prompt, (answer) => {
+          const v = answer.trim();
+          if (v === "") return resolve(defaultVal);
+          const num = Number(v);
+          if (Number.isInteger(num) && num >= 1 && num <= options.length) {
+            return resolve(options[num - 1]);
+          }
+          const idx = options.findIndex((o) => o.toLowerCase() === v.toLowerCase());
+          if (idx >= 0) return resolve(options[idx]);
+          const y = v.toLowerCase();
+          if (options.length === 2 && /^(y|yes|o|oui|n|no|non)$/.test(y)) {
+            return resolve(options[y === "n" || y === "no" || y === "non" ? 1 : 0]);
+          }
+          console.log(`    Choix invalide. Options: ${options.join(", ")}`);
+          loop();
+        });
+      };
+      loop();
+      return;
+    }
+
+    const stdin = io.stdin;
+    const stdout = io.stdout;
+    const keypressHandlers = stdin.listeners("keypress");
+    let index = maxIndex;
+    let pending = "";
+
+    const cleanup = (finalLine) => {
+      stdin.removeListener("data", onData);
+      for (const handler of keypressHandlers) stdin.on("keypress", handler);
+      rl.resume();
+      if (finalLine) {
+        menuErase(options, stdout);
+        stdout.write(`  ${label}: ${finalLine}\n`);
+      }
+    };
+
+    const finish = (value) => {
+      cleanup(options[index]);
+      resolve(value);
+    };
+
+    const cancel = () => {
+      cleanup();
+      menuErase(options, stdout);
+      reject(new Error("Annulé par l'utilisateur (Ctrl+C)."));
+    };
+
+    function move(delta) {
+      index = (index + delta + options.length) % options.length;
+      menuErase(options, stdout);
+      menuDraw(label, options, index, stdout);
+    }
+
+    function onData(chunk) {
+      pending += chunk.toString("utf8");
+      while (pending.length > 0) {
+        const head = pending[0];
+        if (head === "\x1b") {
+          // ESC-introduced sequences: "ESC [ <final>" (CSI) or "ESC O <final>"
+          // (SS3). The final byte is a code in the 0x40-0x7e range, but the
+          // introducer itself ('[' 0x5b, 'O' 0x4f) is also in that range, so
+          // only bytes after the introducer may count as the final byte.
+          if (pending.length < 2) return;
+          const intro = pending[1];
+          let consumed;
+          if (intro === "[" || intro === "O") {
+            let final = -1;
+            for (let i = 2; i < pending.length; i += 1) {
+              const code = pending.charCodeAt(i);
+              if (code >= 0x40 && code <= 0x7e) {
+                final = i;
+                break;
+              }
+            }
+            if (final === -1) return; // sequence incomplete, wait for more input
+            const seq = pending.slice(1, final + 1);
+            consumed = final + 1;
+            if (seq === "[A" || seq === "OA") move(-1);
+            else if (seq === "[B" || seq === "OB") move(1);
+          } else {
+            consumed = 2; // ESC + single char (Alt-letter); not an arrow key
+          }
+          pending = pending.slice(consumed);
+          continue;
+        }
+        pending = pending.slice(1);
+        if (head === "\r" || head === "\n") {
+          finish(options[index]);
+          return;
+        }
+        if (head === "\x03") {
+          cleanup();
+          reject(new Error("Annulé par l'utilisateur (Ctrl+C)."));
+          return;
+        }
+        const digit = Number(head);
+        if (Number.isInteger(digit) && digit >= 1 && digit <= options.length) {
+          index = digit - 1;
+          menuErase(options, stdout);
+          menuDraw(label, options, index, stdout);
+        }
+      }
+    }
+
+    stdin.removeAllListeners("keypress");
+    if (typeof stdin.setRawMode === "function" && !stdin.isRaw) {
+      stdin.setRawMode(true);
+    }
+
+    menuDraw(label, options, index, stdout);
+    stdin.on("data", onData);
+  });
+}
+
 function askBool(rl, label, defaultValue = true) {
+  if (INTERACTIVE()) {
+    return selectOptions(rl, label, ["Oui", "Non"], defaultValue ? 0 : 1).then((v) => v === "Oui");
+  }
   const def = defaultValue ? "Y/n" : "y/N";
   return new Promise((resolve) =>
     rl.question(`  ${label} (${def}): `, (answer) => {
@@ -66,26 +221,12 @@ function askBool(rl, label, defaultValue = true) {
       if (v === "") return resolve(defaultValue);
       if (v === "y" || v === "yes" || v === "o" || v === "oui") return resolve(true);
       return resolve(false);
-    })
+    }),
   );
 }
 
 function choose(rl, label, options, defaultValueIndex = 0) {
-  const defaultVal = options[defaultValueIndex];
-  const prompt = `  ${label} (${options.map((o, i) => (i === defaultValueIndex ? o : o)).join(" / ")}): `;
-  return new Promise((resolve) => {
-    const loop = () => {
-      rl.question(prompt, (answer) => {
-        const v = answer.trim();
-        if (v === "") return resolve(defaultVal);
-        const idx = options.findIndex((o) => o.toLowerCase() === v.toLowerCase());
-        if (idx >= 0) return resolve(options[idx]);
-        console.log(`    Choix invalide. Options: ${options.join(", ")}`);
-        loop();
-      });
-    };
-    loop();
-  });
+  return selectOptions(rl, label, options, defaultValueIndex);
 }
 
 function toPascalCase(value) {
@@ -123,7 +264,15 @@ async function collectFeatures(rl) {
   const auditFields = await askBool(rl, "Champs d'audit (date création/modification)", false);
   const softDelete = await askBool(rl, "Suppression logique (soft delete)", false);
   const apiDocs = await askBool(rl, "Documentation API (Swagger)", true);
-  return { pagination, search, filtering, export: exportEnabled, auditFields, softDelete, apiDocumentation: apiDocs };
+  return {
+    pagination,
+    search,
+    filtering,
+    export: exportEnabled,
+    auditFields,
+    softDelete,
+    apiDocumentation: apiDocs,
+  };
 }
 
 async function collectSecurity(rl) {
@@ -171,8 +320,17 @@ async function collectFields(rl, entityName) {
     const javaType = await choose(
       rl,
       `  Type de '${name}'`,
-      ["String", "Long", "Integer", "Boolean", "LocalDate", "LocalDateTime", "Double", "BigDecimal"],
-      0
+      [
+        "String",
+        "Long",
+        "Integer",
+        "Boolean",
+        "LocalDate",
+        "LocalDateTime",
+        "Double",
+        "BigDecimal",
+      ],
+      0,
     );
     const required = await askBool(rl, `  '${name}' obligatoire`, false);
     const unique = await askBool(rl, `  '${name}' unique`, false);
@@ -203,7 +361,10 @@ async function collectRelations(rl, entityName, allEntityNames) {
   const oneToMany = [];
   console.log(`\nRelations de l'entité ${entityName} (ligne vide pour terminer):`);
   while (true) {
-    const target = await ask(rl, "  Relation many-to-one vers (vide pour finir, 'done' pour relations one-to-many)");
+    const target = await ask(
+      rl,
+      "  Relation many-to-one vers (vide pour finir, 'done' pour relations one-to-many)",
+    );
     if (target === "done") break;
     if (!target) break;
     const targetPascal = toPascalCase(target);
@@ -211,8 +372,16 @@ async function collectRelations(rl, entityName, allEntityNames) {
       console.log("    Nom de cible invalide.");
       continue;
     }
-    const fieldName = await ask(rl, `  Nom du champ relation (défaut: ${toCamelCase(targetPascal)})`, toCamelCase(targetPascal));
-    const joinColumn = await ask(rl, `  Colonne de jointure (défaut: ${toSnakeUpper(targetPascal) + "_ID"})`, toSnakeUpper(targetPascal) + "_ID");
+    const fieldName = await ask(
+      rl,
+      `  Nom du champ relation (défaut: ${toCamelCase(targetPascal)})`,
+      toCamelCase(targetPascal),
+    );
+    const joinColumn = await ask(
+      rl,
+      `  Colonne de jointure (défaut: ${toSnakeUpper(targetPascal) + "_ID"})`,
+      toSnakeUpper(targetPascal) + "_ID",
+    );
     const nullable = await askBool(rl, "  Relation nullable", false);
     const cascade = await choose(rl, "  Comportement cascade", ["PERSIST", "ALL", "NONE"], 0);
     const orphanRemoval = await askBool(rl, "  Suppression orpheline (orphanRemoval)", false);
@@ -236,8 +405,16 @@ async function collectRelations(rl, entityName, allEntityNames) {
       console.log("    Nom de cible invalide.");
       continue;
     }
-    const fieldName = await ask(rl, `  Nom du champ collection (défaut: ${toCamelCase(targetPascal)}s)`, toCamelCase(targetPascal) + "s");
-    const mappedBy = await ask(rl, "  Attribut 'mappedBy' (champ dans la cible qui pointe vers cette entité)", toCamelCase(entityName));
+    const fieldName = await ask(
+      rl,
+      `  Nom du champ collection (défaut: ${toCamelCase(targetPascal)}s)`,
+      toCamelCase(targetPascal) + "s",
+    );
+    const mappedBy = await ask(
+      rl,
+      "  Attribut 'mappedBy' (champ dans la cible qui pointe vers cette entité)",
+      toCamelCase(entityName),
+    );
     const orphanRemoval = await askBool(rl, "  Suppression orpheline (orphanRemoval)", false);
     oneToMany.push({
       relationName: `${entityName}_${targetPascal}`,
@@ -255,7 +432,9 @@ async function runWizard() {
   const rl = askInterface();
   console.log("\nStockPro Backend Generator — Assistant interactif");
   console.log("====================================================");
-  console.log("Cet assistant enregistre le modèle complet de l'application puis génère le backend.\n");
+  console.log(
+    "Cet assistant enregistre le modèle complet de l'application puis génère le backend.\n",
+  );
 
   const appName = await ask(rl, "Nom de l'application", "StockPro");
   const appType = await choose(rl, "Type d'application", APP_TYPES, 0);
@@ -291,13 +470,28 @@ async function runWizard() {
       }
     }
     names.add(name);
+    if (isCoreEntityName(name)) {
+      console.log(
+        `    «${name}» est une classe intégrée (auth): le générateur conservera la version intégrée.`,
+      );
+    }
     const module = toCamelCase(await ask(rl, `${name} — module (package)`, "administration"));
     const tableName = await ask(rl, `${name} — table`, toSnakeUpper(name));
     const idType = await choose(rl, `${name} — type d'identifiant`, VALID_ID_TYPES, 0);
     const idField = await ask(rl, `${name} — nom du champ id`, "id");
     const idColumn = await ask(rl, `${name} — colonne id`, toSnakeUpper(name) + "_ID");
-    const serviceDescription = await ask(rl, `${name} — description du service`, `${name} management`);
-    const urlPath = await ask(rl, `${name} — chemin URL`, toCamelCase(name).replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase() + "s");
+    const serviceDescription = await ask(
+      rl,
+      `${name} — description du service`,
+      `${name} management`,
+    );
+    const urlPath = await ask(
+      rl,
+      `${name} — chemin URL`,
+      toCamelCase(name)
+        .replace(/([a-z])([A-Z])/g, "$1-$2")
+        .toLowerCase() + "s",
+    );
     const permissionCode = `${security.permissionPrefix}_${name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
 
     const fields = await collectFields(rl, name);
@@ -308,7 +502,9 @@ async function runWizard() {
       .map((f) => ({ nameCap: f.nameCap }));
     const exportColumns = fields.map((f) => ({ nameCap: f.nameCap, label: f.name }));
     const hasValidation = fields.some((f) => f.required);
-    const needsLocalDate = fields.some((f) => f.javaType === "LocalDate" || f.javaType === "LocalDateTime");
+    const needsLocalDate = fields.some(
+      (f) => f.javaType === "LocalDate" || f.javaType === "LocalDateTime",
+    );
 
     entities.push({
       module,
@@ -352,7 +548,8 @@ async function runWizard() {
   fs.mkdirSync(schemaDir, { recursive: true });
   const targets = target === "both" ? ["backend", "frontend"] : [target];
   const serverRoot = target === "frontend" ? null : path.join(absoluteOutput, "server");
-  const clientRoot = target === "backend" ? null : path.join(absoluteOutput, target === "both" ? "client" : "");
+  const clientRoot =
+    target === "backend" ? null : path.join(absoluteOutput, target === "both" ? "client" : "");
   const manifest = {
     targets,
     appName,
@@ -377,7 +574,10 @@ async function runWizard() {
     schemaVersion: "1.0.0",
     createdAt: new Date().toISOString(),
   };
-  fs.writeFileSync(path.join(absoluteOutput, "project.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.writeFileSync(
+    path.join(absoluteOutput, "project.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   entities.forEach((entity, index) => {
     const fileName = `${String(index + 1).padStart(3, "0")}-${entity.name}.json`;
     fs.writeFileSync(path.join(schemaDir, fileName), `${JSON.stringify({ entity }, null, 2)}\n`);
@@ -385,8 +585,13 @@ async function runWizard() {
 
   console.log(`\nModèle enregistré dans ${absoluteOutput}`);
   if (serverRoot) {
-    const backendResult = spawnSync(process.execPath, [path.join(root, "generate.js"), schemaDir, absoluteOutput, "--strict-relations"], { stdio: "inherit" });
-    if (backendResult.status !== 0) throw new Error("La génération du backend a échoué; consultez les messages ci-dessus.");
+    const backendResult = spawnSync(
+      process.execPath,
+      [path.join(root, "generate.js"), schemaDir, absoluteOutput, "--strict-relations"],
+      { stdio: "inherit" },
+    );
+    if (backendResult.status !== 0)
+      throw new Error("La génération du backend a échoué; consultez les messages ci-dessus.");
   }
   if (clientRoot) {
     const frontendArgs = [
@@ -395,11 +600,11 @@ async function runWizard() {
       clientRoot,
       `--frontend=${frontend.framework}`,
     ];
-    const templatePath =
-      cliFlag("--frontend-template") || frontend.templatePath || undefined;
+    const templatePath = cliFlag("--frontend-template") || frontend.templatePath || undefined;
     if (templatePath) frontendArgs.push(`--frontend-template=${templatePath}`);
     const frontendResult = spawnSync(process.execPath, frontendArgs, { stdio: "inherit" });
-    if (frontendResult.status !== 0) throw new Error("La génération du frontend a échoué; consultez les messages ci-dessus.");
+    if (frontendResult.status !== 0)
+      throw new Error("La génération du frontend a échoué; consultez les messages ci-dessus.");
   }
 
   await finishAndSupportRun(absoluteOutput, { targets, serverRoot, clientRoot });
@@ -408,12 +613,18 @@ async function runWizard() {
 function runInstructions(parts) {
   console.log("\nExécution de l'application générée :");
   if (parts.server) {
-    console.log(`  Backend :  cd "${parts.server}" && mvn spring-boot:run   ->  http://localhost:8081`);
+    console.log(
+      `  Backend :  cd "${parts.server}" && mvn spring-boot:run   ->  http://localhost:8081`,
+    );
   }
   if (parts.client) {
-    console.log(`  Frontend : cd "${parts.client}" && npm install && npm run dev  ->  http://localhost:3000`);
+    console.log(
+      `  Frontend : cd "${parts.client}" && npm install && npm run dev  ->  http://localhost:3000`,
+    );
   }
-  console.log(`  Raccourci: "${parts.output}\\dev-run.ps1" (Windows) ou "${parts.output}\\dev-run.sh"`);
+  console.log(
+    `  Raccourci: "${parts.output}\\dev-run.ps1" (Windows) ou "${parts.output}\\dev-run.sh"`,
+  );
   console.log(`  Vérifier : npm run test-app -- "${parts.output}"`);
 }
 
@@ -430,15 +641,21 @@ function writeDevScripts(absoluteOutput, serverRoot, clientRoot) {
       ps1.push(
         `Write-Host "Starting frontend on :3000..."`,
         `if (-not $NoInstall) { Push-Location "$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}"; npm install; Pop-Location }`,
-        `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}\\\`"; npm run dev")`
+        `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}\\\`"; npm run dev")`,
       );
     }
     fs.writeFileSync(path.join(absoluteOutput, "dev-run.ps1"), ps1.join("\r\n") + "\r\n");
   }
   if (serverRoot || clientRoot) {
     const sh = ["#!/usr/bin/env bash", `set -e`, `DIR="$(cd "$(dirname "$0")" && pwd)"`];
-    if (serverRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, serverRoot).replace(/\\/g, "/")}" && mvn spring-boot:run ) &`);
-    if (clientRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, clientRoot).replace(/\\/g, "/")}" && npm install && npm run dev ) &`);
+    if (serverRoot)
+      sh.push(
+        `( cd "$DIR/${path.relative(absoluteOutput, serverRoot).replace(/\\/g, "/")}" && mvn spring-boot:run ) &`,
+      );
+    if (clientRoot)
+      sh.push(
+        `( cd "$DIR/${path.relative(absoluteOutput, clientRoot).replace(/\\/g, "/")}" && npm install && npm run dev ) &`,
+      );
     sh.push(`wait`);
     fs.writeFileSync(path.join(absoluteOutput, "dev-run.sh"), sh.join("\n") + "\n");
   }
@@ -453,11 +670,16 @@ async function finishAndSupportRun(absoluteOutput, { targets, serverRoot, client
   const rela = path.relative(process.cwd(), absoluteOutput) || ".";
   runInstructions({
     output: absoluteOutput,
-    server: serverRoot ? path.join(rela, path.relative(absoluteOutput, serverRoot)).replace(/\\/g, "/") : null,
-    client: clientRoot ? path.join(rela, path.relative(absoluteOutput, clientRoot)).replace(/\\/g, "/") : null,
+    server: serverRoot
+      ? path.join(rela, path.relative(absoluteOutput, serverRoot)).replace(/\\/g, "/")
+      : null,
+    client: clientRoot
+      ? path.join(rela, path.relative(absoluteOutput, clientRoot)).replace(/\\/g, "/")
+      : null,
   });
 
-  const forceRun = cliFlag("--run") === true || cliFlag("--run") === "1" || cliFlag("--run") === "yes";
+  const forceRun =
+    cliFlag("--run") === true || cliFlag("--run") === "1" || cliFlag("--run") === "yes";
   const skipRun = cliFlag("--skip-run") !== undefined;
   let runNow = false;
   if (skipRun) {
@@ -478,7 +700,9 @@ async function finishAndSupportRun(absoluteOutput, { targets, serverRoot, client
   if (runNow) {
     await launchGenerated(absoluteOutput, { targets, serverRoot, clientRoot });
   } else {
-    console.log("\nVous pouvez lancer l'application à tout moment avec le script dev-run.ps1 / dev-run.sh, ou en suivant les commandes ci-dessus.");
+    console.log(
+      "\nVous pouvez lancer l'application à tout moment avec le script dev-run.ps1 / dev-run.sh, ou en suivant les commandes ci-dessus.",
+    );
   }
 }
 
@@ -486,22 +710,42 @@ function launchGenerated(absoluteOutput, { serverRoot, clientRoot }) {
   const spawn = require("node:child_process").spawn;
   if (clientRoot) {
     console.log(`\nInstallation des dépendances frontend (${clientRoot})...`);
-    const install = spawnSync("npm", ["install"], { cwd: clientRoot, stdio: "inherit", shell: process.platform === "win32" });
+    const install = spawnSync("npm", ["install"], {
+      cwd: clientRoot,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
     if (install.status !== 0) {
       console.warn("  npm install a échoué — le frontend ne pourra pas démarrer.");
     } else {
       console.log("  Démarrage du frontend (Next.js) sur http://localhost:3000 ...");
-      spawn("npm", ["run", "dev"], { cwd: clientRoot, stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
+      spawn("npm", ["run", "dev"], {
+        cwd: clientRoot,
+        stdio: "ignore",
+        detached: true,
+        shell: process.platform === "win32",
+      }).unref();
     }
   }
   if (serverRoot) {
     console.log(`  Démarrage du backend (Spring Boot) sur http://localhost:8081 ...`);
-    spawn("mvn", ["spring-boot:run"], { cwd: serverRoot, stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
+    spawn("mvn", ["spring-boot:run"], {
+      cwd: serverRoot,
+      stdio: "ignore",
+      detached: true,
+      shell: process.platform === "win32",
+    }).unref();
   }
-  console.log("\nLes serveurs démarrent dans des fenêtres séparées. Arrêtez-les avec Ctrl+C dans chaque fenêtre.");
+  console.log(
+    "\nLes serveurs démarrent dans des fenêtres séparées. Arrêtez-les avec Ctrl+C dans chaque fenêtre.",
+  );
 }
 
-runWizard().catch((error) => {
-  console.error(`\nErreur: ${error.message}`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  runWizard().catch((error) => {
+    console.error(`\nErreur: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { selectOptions, askBool, INTERACTIVE };

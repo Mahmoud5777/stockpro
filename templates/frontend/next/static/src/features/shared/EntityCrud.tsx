@@ -18,13 +18,26 @@ export interface EntityDescriptor {
   kebab: string;
   urlPath: string;
   label: string;
+  idField: string;
   permissionCode: string;
   fields: EntityField[];
 }
 
 export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
-  const { list, create, update, remove } = useEntityCrud(entity);
+  const {
+    list,
+    create,
+    update,
+    remove,
+    search,
+    setSearch,
+    filters,
+    setFilters,
+    page,
+    setPage,
+  } = useEntityCrud(entity);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
+  const idField = entity.idField || "id";
 
   const schemaShape: Record<string, z.ZodTypeAny> = {};
   entity.fields.forEach((f) => {
@@ -48,9 +61,9 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
   } = useForm({ resolver: zodResolver(schema) });
 
   const onSubmit = (values: Record<string, unknown>) => {
-    if (editing && editing.id) {
+    if (editing && editing[idField]) {
       update.mutate(
-        { id: String(editing.id), data: values },
+        { id: String(editing[idField]), data: values },
         {
           onSuccess: () => {
             setEditing(null);
@@ -73,9 +86,20 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
     reset({});
   };
 
-  const rows: Record<string, unknown>[] = Array.isArray(list.data)
-    ? list.data
+  const rows: Record<string, unknown>[] = Array.isArray(list.data?.items)
+    ? list.data.items
     : [];
+
+  const totalPages = Math.max(list.data?.totalPages ?? 1, 1);
+
+  const setFilter = (name: string, value: string) => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      if (value === "") delete next[name];
+      else next[name] = value;
+      return next;
+    });
+  };
 
   return (
     <div>
@@ -88,6 +112,45 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
           Ajouter
         </button>
       </div>
+
+      <div className="mb-4">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher dans cette liste…"
+          className="w-full max-w-md rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-400"
+        />
+      </div>
+
+      {entity.fields.length > 0 && (
+        <div className="mb-4 grid grid-cols-2 gap-3 rounded bg-white p-4 shadow sm:grid-cols-3 lg:grid-cols-4">
+          {entity.fields.map((f) => (
+            <label key={f.name} className="block text-sm">
+              <span className="block font-medium">{f.label}</span>
+              {f.type === "boolean" ? (
+                <select
+                  value={filters[f.name] ?? ""}
+                  onChange={(e) => setFilter(f.name, e.target.value)}
+                  className="mt-1 w-full rounded border px-3 py-2"
+                >
+                  <option value="">Tous</option>
+                  <option value="true">Oui</option>
+                  <option value="false">Non</option>
+                </select>
+              ) : (
+                <input
+                  type={f.type === "number" ? "number" : "text"}
+                  value={filters[f.name] ?? ""}
+                  onChange={(e) => setFilter(f.name, e.target.value)}
+                  placeholder={`Filtrer par ${f.label.toLowerCase()}`}
+                  className="mt-1 w-full rounded border px-3 py-2"
+                />
+              )}
+            </label>
+          ))}
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -143,6 +206,7 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100">
             <tr>
+              <th className="px-3 py-2 text-left">ID</th>
               {entity.fields.map((f) => (
                 <th key={f.name} className="px-3 py-2 text-left">
                   {f.label}
@@ -153,7 +217,10 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={String(row.id ?? i)} className="border-t">
+              <tr key={String(row[idField] ?? i)} className="border-t">
+                <td className="px-3 py-2 font-mono text-xs">
+                  {String(row[idField] ?? "")}
+                </td>
                 {entity.fields.map((f) => (
                   <td key={f.name} className="px-3 py-2">
                     {String(row[f.name] ?? "")}
@@ -167,7 +234,7 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
                     Editer
                   </button>
                   <button
-                    onClick={() => remove.mutate(String(row.id))}
+                    onClick={() => remove.mutate(String(row[idField]))}
                     className="text-red-600 hover:underline"
                   >
                     Supprimer
@@ -178,15 +245,40 @@ export default function EntityCrud({ entity }: { entity: EntityDescriptor }) {
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={entity.fields.length + 1}
+                  colSpan={entity.fields.length + 2}
                   className="px-3 py-4 text-center text-slate-400"
                 >
-                  Aucun élément
+                  {search || Object.keys(filters).length > 0
+                    ? "Aucun résultat pour cette recherche / ces filtres"
+                    : "Aucun élément"}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="text-slate-500">
+          {list.data?.totalElements ?? 0} élément(s) — page {page + 1} /{" "}
+          {totalPages}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            className="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Précédent
+          </button>
+          <button
+            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+            disabled={page >= totalPages - 1}
+            className="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Suivant
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -19,6 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+{{#if entity.features.search}}
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+{{/if}}
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 {{#if (eq entity.idType "UUID")}}
@@ -67,15 +73,61 @@ public List<{{entity.name}}DTO> findAll() {
         @Override
         @Transactional(readOnly = true)
         public Page<{{entity.name}}DTO> findAll(String search, Map<String, String> filters, Pageable pageable) {
-                return {{entity.repoVar}}.findAll(pageable).map(mapper::toDto);
+                return {{entity.repoVar}}.findAll(buildSpec(search, filters), pageable).map(mapper::toDto);
                 }
-                {{/if}}
 
-                {{#if entity.features.export}}
-                @Override
-                @Transactional(readOnly = true)
-                public List<{{entity.name}}DTO> findAllForExport(String search, Map<String, String> filters) {
+        private Specification<{{entity.name}}> buildSpec(String search, Map<String, String> filters) {
+                return (root, query, cb) -> {
+                        List<Predicate> preds = new ArrayList<>();
+                        preds.add(cb.conjunction());
+                        {{#if entity.hasStringFields}}
+                        if (search != null && !search.isBlank()) {
+                                String like = "%" + search.trim().toLowerCase() + "%";
+                                List<Predicate> searchPreds = new ArrayList<>();
+                                {{#each entity.fields}}
+                                {{#if (eq this.javaType "String")}}
+                                searchPreds.add(cb.like(cb.lower(root.get("{{this.name}}")), like));
+                                {{/if}}
+                                {{/each}}
+                                preds.add(cb.or(searchPreds.toArray(new Predicate[0])));
+                        }
+                        {{/if}}
+                        {{#each entity.fields}}
+                        String v{{this.name}} = filters.get("{{this.name}}");
+                        if (v{{this.name}} != null && !v{{this.name}}.isBlank()) {
+                            {{#if (eq this.javaType "String")}}
+                            preds.add(cb.like(cb.lower(root.get("{{this.name}}")), "%" + v{{this.name}}.toLowerCase() + "%"));
+                            {{else if (eq this.javaType "Integer")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), Integer.parseInt(v{{this.name}}))); } catch (NumberFormatException ignored) { }
+                            {{else if (eq this.javaType "Long")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), Long.parseLong(v{{this.name}}))); } catch (NumberFormatException ignored) { }
+                            {{else if (eq this.javaType "Double")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), Double.parseDouble(v{{this.name}}))); } catch (NumberFormatException ignored) { }
+                            {{else if (eq this.javaType "BigDecimal")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), new java.math.BigDecimal(v{{this.name}}))); } catch (NumberFormatException ignored) { }
+                            {{else if (eq this.javaType "Boolean")}}
+                            preds.add(cb.equal(root.get("{{this.name}}"), Boolean.parseBoolean(v{{this.name}})));
+                            {{else if (eq this.javaType "LocalDate")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), java.time.LocalDate.parse(v{{this.name}}.trim()))); } catch (Exception ignored) { }
+                            {{else if (eq this.javaType "LocalDateTime")}}
+                            try { preds.add(cb.equal(root.get("{{this.name}}"), java.time.LocalDateTime.parse(v{{this.name}}.trim()))); } catch (Exception ignored) { }
+                            {{/if}}
+                        }
+                        {{/each}}
+                        return cb.and(preds.toArray(new Predicate[0]));
+                };
+        }
+        {{/if}}
+
+        {{#if entity.features.export}}
+        @Override
+        @Transactional(readOnly = true)
+        public List<{{entity.name}}DTO> findAllForExport(String search, Map<String, String> filters) {
+                        {{#if entity.features.search}}
+                        return {{entity.repoVar}}.findAll(buildSpec(search, filters)).stream()
+                        {{else}}
                         return {{entity.repoVar}}.findAll().stream()
+                        {{/if}}
                         .map(mapper::toDto)
                         .collect(Collectors.toList());
                         }

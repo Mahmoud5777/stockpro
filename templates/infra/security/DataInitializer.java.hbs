@@ -63,8 +63,7 @@ import java.util.List;
                 .orElseGet(() -> profilRepository.save(Profil.builder()
                 .codeProfil("SUPERADMIN")
                 .libelle("Super Administrateur")
-                .description("Accès complet à toutes les fonctionnalités (créé automatiquement pour le premier compte
-                admin)")
+                .description("Accès complet à toutes les fonctionnalités (créé automatiquement pour le premier compte admin)")
                 .build()));
 
                 seedProfilDroits(profil, fonctionnalites);

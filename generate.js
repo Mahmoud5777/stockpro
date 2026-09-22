@@ -24,14 +24,121 @@ Handlebars.registerHelper("add", (left, right) => Number(left) + Number(right));
 
 const TEMPLATES_DIR = path.join(__dirname, "templates");
 const VALID_ID_TYPES = ["UUID", "String", "Long"];
-const REQUIRED_ENTITY_FIELDS = [
-  "module",
-  "name",
-  "tableName",
-  "idField",
-  "idColumn",
-  "urlPath",
-];
+const REQUIRED_ENTITY_FIELDS = ["module", "name", "tableName", "idField", "idColumn", "urlPath"];
+
+const CORE_ENTITY_NAMES = new Set([
+  "User",
+  "Role",
+  "RefreshToken",
+  "Site",
+  "Groupe",
+  "Profil",
+  "Application",
+  "Fonctionnalite",
+  "UserSite",
+  "UserSiteDroits",
+  "GroupeRole",
+  "GroupeProfil",
+  "ProfilDroit",
+]);
+
+const CORE_ENTITY_IDS = {
+  User: "idUtil",
+  Role: "idRl",
+  Site: "idSite",
+  Groupe: "idGr",
+  Profil: "idPr",
+  Application: "idApp",
+  Fonctionnalite: "idFonc",
+  UserSite: "idUtilSite",
+  UserSiteDroits: "idUserSiteDroit",
+  GroupeRole: "idGroupeRole",
+  GroupeProfil: "idGroupeProfil",
+  ProfilDroit: "idProfilDroit",
+  RefreshToken: "idRefreshToken",
+};
+
+const CORE_ENTITY_FIELDS = {
+  User: [
+    { name: "nomComplet", javaType: "String", required: true },
+    { name: "login", javaType: "String", required: true },
+    { name: "email", javaType: "String", required: true },
+    { name: "telephone", javaType: "String" },
+    { name: "etatCompte", javaType: "Boolean" },
+    { name: "motPasse", javaType: "String", writeOnly: true },
+    { name: "dateCreation", javaType: "LocalDate" },
+  ],
+  Role: [
+    { name: "codeRole", javaType: "String", required: true },
+    { name: "libelle", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+  ],
+  Site: [
+    { name: "codeSite", javaType: "String", required: true },
+    { name: "nomSite", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+    { name: "address", javaType: "String" },
+  ],
+  Groupe: [
+    { name: "codeGroupe", javaType: "String", required: true },
+    { name: "libelle", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+  ],
+  Profil: [
+    { name: "codeProfil", javaType: "String", required: true },
+    { name: "libelle", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+  ],
+  Application: [
+    { name: "codeApp", javaType: "String", required: true },
+    { name: "nomApp", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+    { name: "version", javaType: "String" },
+  ],
+  Fonctionnalite: [
+    { name: "codeFonc", javaType: "String", required: true },
+    { name: "libelle", javaType: "String", required: true },
+    { name: "description", javaType: "String" },
+    { name: "url", javaType: "String" },
+    { name: "icone", javaType: "String" },
+    { name: "orderAffichage", javaType: "Integer" },
+    { name: "actif", javaType: "Boolean" },
+  ],
+  UserSite: [
+    { name: "idUtil", javaType: "UUID", required: true },
+    { name: "idSite", javaType: "UUID", required: true },
+    { name: "dateAffectation", javaType: "LocalDate" },
+  ],
+  UserSiteDroits: [
+    { name: "idUtilSite", javaType: "UUID", required: true },
+    { name: "idRl", javaType: "UUID" },
+    { name: "idPr", javaType: "UUID" },
+    { name: "idGr", javaType: "UUID" },
+    { name: "dateAffectation", javaType: "LocalDate" },
+  ],
+  GroupeRole: [
+    { name: "idRl", javaType: "UUID", required: true },
+    { name: "idGr", javaType: "UUID", required: true },
+    { name: "actif", javaType: "Boolean" },
+    { name: "dateCreation", javaType: "LocalDate" },
+  ],
+  GroupeProfil: [
+    { name: "idGr", javaType: "UUID", required: true },
+    { name: "idPr", javaType: "UUID", required: true },
+    { name: "actif", javaType: "Boolean" },
+    { name: "dateCreation", javaType: "LocalDate" },
+  ],
+  ProfilDroit: [
+    { name: "idPr", javaType: "UUID", required: true },
+    { name: "idFonc", javaType: "UUID", required: true },
+    { name: "consultation", javaType: "Boolean" },
+    { name: "ajout", javaType: "Boolean" },
+    { name: "suppression", javaType: "Boolean" },
+    { name: "impression", javaType: "Boolean" },
+    { name: "export", javaType: "Boolean" },
+    { name: "modification", javaType: "Boolean" },
+  ],
+};
 
 function isValidIdType(value) {
   return VALID_ID_TYPES.includes(value);
@@ -49,7 +156,10 @@ const LAYERS = [
   { template: "dto.hbs", outPath: (e) => `dto/${e.module}/${e.name}DTO.java` },
   { template: "repository.hbs", outPath: (e) => `repository/${e.module}/${e.name}Repository.java` },
   { template: "service.hbs", outPath: (e) => `service/${e.module}/${e.name}Service.java` },
-  { template: "service-impl.hbs", outPath: (e) => `service/${e.module}/impl/${e.name}ServiceImpl.java` },
+  {
+    template: "service-impl.hbs",
+    outPath: (e) => `service/${e.module}/impl/${e.name}ServiceImpl.java`,
+  },
   { template: "mapper.hbs", outPath: (e) => `mapper/${e.module}/${e.name}Mapper.java` },
   { template: "controller.hbs", outPath: (e) => `controller/${e.module}/${e.name}Controller.java` },
 ];
@@ -60,115 +170,461 @@ const LAYERS = [
 const CORE_LAYERS = [
   { template: "infra/pom.xml.hbs", outPath: () => "pom.xml" },
   { template: "infra/application.yml.hbs", outPath: () => "src/main/resources/application.yml" },
-  { template: "infra/StockproApplication.java.hbs", outPath: () => "src/main/java/com/stockpro/StockproApplication.java" },
-  { template: "infra/security/SecurityConfig.java.hbs", outPath: () => "src/main/java/com/stockpro/security/SecurityConfig.java" },
-  { template: "infra/security/JwtService.java.hbs", outPath: () => "src/main/java/com/stockpro/security/JwtService.java" },
-  { template: "infra/security/JwtAuthenticationFilter.java.hbs", outPath: () => "src/main/java/com/stockpro/security/JwtAuthenticationFilter.java" },
-  { template: "infra/security/UserDetailsServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/security/UserDetailsServiceImpl.java" },
-  { template: "infra/security/AccessGuard.java.hbs", outPath: () => "src/main/java/com/stockpro/security/AccessGuard.java" },
-  { template: "infra/security/DataInitializer.java.hbs", outPath: () => "src/main/java/com/stockpro/security/DataInitializer.java" },
-  { template: "infra/dto/common/PageResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/common/PageResponseDTO.java" },
-  { template: "infra/exception/GlobalExceptionHandler.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/GlobalExceptionHandler.java" },
-  { template: "infra/exception/ResourceNotFoundException.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/ResourceNotFoundException.java" },
-  { template: "infra/exception/TokenRefreshException.java.hbs", outPath: () => "src/main/java/com/stockpro/exception/TokenRefreshException.java" },
-  { template: "infra/entity/administration/User.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/User.java" },
-  { template: "infra/entity/administration/Role.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Role.java" },
-  { template: "infra/entity/administration/RefreshToken.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/RefreshToken.java" },
-  { template: "infra/entity/administration/Site.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Site.java" },
-  { template: "infra/entity/administration/Groupe.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Groupe.java" },
-  { template: "infra/entity/administration/Profil.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Profil.java" },
-  { template: "infra/entity/administration/Application.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Application.java" },
-  { template: "infra/entity/administration/Fonctionnalite.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/Fonctionnalite.java" },
-  { template: "infra/entity/administration/UserSite.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/UserSite.java" },
-  { template: "infra/entity/administration/UserSiteDroits.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/UserSiteDroits.java" },
-  { template: "infra/entity/administration/GroupeRole.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeRole.java" },
-  { template: "infra/entity/administration/GroupeProfil.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeProfil.java" },
-  { template: "infra/entity/administration/ProfilDroit.java.hbs", outPath: () => "src/main/java/com/stockpro/entity/administration/ProfilDroit.java" },
-  { template: "infra/repository/administration/UserRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserRepository.java" },
-  { template: "infra/repository/administration/RoleRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/RoleRepository.java" },
-  { template: "infra/repository/administration/RefreshTokenRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/RefreshTokenRepository.java" },
-  { template: "infra/repository/administration/SiteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/SiteRepository.java" },
-  { template: "infra/repository/administration/GroupeRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRepository.java" },
-  { template: "infra/repository/administration/ProfilRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ProfilRepository.java" },
-  { template: "infra/repository/administration/ApplicationRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ApplicationRepository.java" },
-  { template: "infra/repository/administration/FonctionnaliteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/FonctionnaliteRepository.java" },
-  { template: "infra/repository/administration/UserSiteRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserSiteRepository.java" },
-  { template: "infra/repository/administration/UserSiteDroitsRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/UserSiteDroitsRepository.java" },
-  { template: "infra/repository/administration/GroupeRoleRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRoleRepository.java" },
-  { template: "infra/repository/administration/GroupeProfilRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeProfilRepository.java" },
-  { template: "infra/repository/administration/ProfilDroitRepository.java.hbs", outPath: () => "src/main/java/com/stockpro/repository/administration/ProfilDroitRepository.java" },
-  { template: "infra/service/administration/RefreshTokenService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/RefreshTokenService.java" },
-  { template: "infra/service/administration/impl/RefreshTokenServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/RefreshTokenServiceImpl.java" },
-  { template: "infra/dto/administration/UserDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserDTO.java" },
-  { template: "infra/dto/administration/RoleDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/RoleDTO.java" },
-  { template: "infra/dto/administration/SiteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/SiteDTO.java" },
-  { template: "infra/dto/administration/GroupeDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeDTO.java" },
-  { template: "infra/dto/administration/ProfilDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDTO.java" },
-  { template: "infra/dto/administration/ApplicationDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ApplicationDTO.java" },
-  { template: "infra/dto/administration/FonctionnaliteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/FonctionnaliteDTO.java" },
-  { template: "infra/dto/administration/UserSiteDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDTO.java" },
-  { template: "infra/dto/administration/UserSiteDroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDroitsDTO.java" },
-  { template: "infra/dto/administration/GroupeRoleDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeRoleDTO.java" },
-  { template: "infra/dto/administration/GroupeProfilDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeProfilDTO.java" },
-  { template: "infra/dto/administration/ProfilDroitDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDroitDTO.java" },
-  { template: "infra/dto/auth/DroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/DroitsDTO.java" },
-  { template: "infra/dto/auth/FonctionnaliteAvecDroitsDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/FonctionnaliteAvecDroitsDTO.java" },
-  { template: "infra/dto/auth/SiteAllegeDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/SiteAllegeDTO.java" },
-  { template: "infra/mapper/administration/UserMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserMapper.java" },
-  { template: "infra/mapper/administration/RoleMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/RoleMapper.java" },
-  { template: "infra/mapper/administration/SiteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/SiteMapper.java" },
-  { template: "infra/mapper/administration/GroupeMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeMapper.java" },
-  { template: "infra/mapper/administration/ProfilMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilMapper.java" },
-  { template: "infra/mapper/administration/ApplicationMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ApplicationMapper.java" },
-  { template: "infra/mapper/administration/FonctionnaliteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/FonctionnaliteMapper.java" },
-  { template: "infra/mapper/administration/UserSiteMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteMapper.java" },
-  { template: "infra/mapper/administration/UserSiteDroitsMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteDroitsMapper.java" },
-  { template: "infra/mapper/administration/GroupeRoleMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeRoleMapper.java" },
-  { template: "infra/mapper/administration/GroupeProfilMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeProfilMapper.java" },
-  { template: "infra/mapper/administration/ProfilDroitMapper.java.hbs", outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilDroitMapper.java" },
-  { template: "infra/service/administration/UserService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserService.java" },
-  { template: "infra/service/administration/impl/UserServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserServiceImpl.java" },
-  { template: "infra/service/administration/RoleService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/RoleService.java" },
-  { template: "infra/service/administration/impl/RoleServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/RoleServiceImpl.java" },
-  { template: "infra/service/administration/SiteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/SiteService.java" },
-  { template: "infra/service/administration/impl/SiteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/SiteServiceImpl.java" },
-  { template: "infra/service/administration/GroupeService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeService.java" },
-  { template: "infra/service/administration/impl/GroupeServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeServiceImpl.java" },
-  { template: "infra/service/administration/ProfilService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ProfilService.java" },
-  { template: "infra/service/administration/impl/ProfilServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ProfilServiceImpl.java" },
-  { template: "infra/service/administration/ApplicationService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ApplicationService.java" },
-  { template: "infra/service/administration/impl/ApplicationServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ApplicationServiceImpl.java" },
-  { template: "infra/service/administration/FonctionnaliteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/FonctionnaliteService.java" },
-  { template: "infra/service/administration/impl/FonctionnaliteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/FonctionnaliteServiceImpl.java" },
-  { template: "infra/service/administration/UserSiteService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteService.java" },
-  { template: "infra/service/administration/impl/UserSiteServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserSiteServiceImpl.java" },
-  { template: "infra/service/administration/UserSiteDroitsService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteDroitsService.java" },
-  { template: "infra/service/administration/impl/UserSiteDroitsServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserSiteDroitsServiceImpl.java" },
-  { template: "infra/service/administration/GroupeRoleService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeRoleService.java" },
-  { template: "infra/service/administration/impl/GroupeRoleServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeRoleServiceImpl.java" },
-  { template: "infra/service/administration/GroupeProfilService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/GroupeProfilService.java" },
-  { template: "infra/service/administration/impl/GroupeProfilServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeProfilServiceImpl.java" },
-  { template: "infra/service/administration/ProfilDroitService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/ProfilDroitService.java" },
-  { template: "infra/service/administration/impl/ProfilDroitServiceImpl.java.hbs", outPath: () => "src/main/java/com/stockpro/service/administration/impl/ProfilDroitServiceImpl.java" },
-  { template: "infra/controller/administration/UserController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserController.java" },
-  { template: "infra/controller/administration/RoleController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/RoleController.java" },
-  { template: "infra/controller/administration/SiteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/SiteController.java" },
-  { template: "infra/controller/administration/GroupeController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeController.java" },
-  { template: "infra/controller/administration/ProfilController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ProfilController.java" },
-  { template: "infra/controller/administration/ApplicationController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ApplicationController.java" },
-  { template: "infra/controller/administration/FonctionnaliteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/FonctionnaliteController.java" },
-  { template: "infra/controller/administration/UserSiteController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserSiteController.java" },
-  { template: "infra/controller/administration/UserSiteDroitsController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/UserSiteDroitsController.java" },
-  { template: "infra/controller/administration/GroupeRoleController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeRoleController.java" },
-  { template: "infra/controller/administration/GroupeProfilController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeProfilController.java" },
-  { template: "infra/controller/administration/ProfilDroitController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/administration/ProfilDroitController.java" },
-  { template: "infra/service/auth/AuthorizationService.java.hbs", outPath: () => "src/main/java/com/stockpro/service/auth/AuthorizationService.java" },
-  { template: "infra/controller/auth/AuthController.java.hbs", outPath: () => "src/main/java/com/stockpro/controller/auth/AuthController.java" },
-  { template: "infra/dto/auth/LoginRequestDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/LoginRequestDTO.java" },
-  { template: "infra/dto/auth/AuthResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/AuthResponseDTO.java" },
-  { template: "infra/dto/auth/RefreshRequestDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/RefreshRequestDTO.java" },
-  { template: "infra/dto/auth/MeResponseDTO.java.hbs", outPath: () => "src/main/java/com/stockpro/dto/auth/MeResponseDTO.java" },
-  { template: "infra/util/ExcelExporter.java.hbs", outPath: () => "src/main/java/com/stockpro/util/ExcelExporter.java" },
+  {
+    template: "infra/StockproApplication.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/StockproApplication.java",
+  },
+  {
+    template: "infra/security/SecurityConfig.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/SecurityConfig.java",
+  },
+  {
+    template: "infra/security/JwtService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/JwtService.java",
+  },
+  {
+    template: "infra/security/JwtAuthenticationFilter.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/JwtAuthenticationFilter.java",
+  },
+  {
+    template: "infra/security/UserDetailsServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/UserDetailsServiceImpl.java",
+  },
+  {
+    template: "infra/security/AccessGuard.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/AccessGuard.java",
+  },
+  {
+    template: "infra/security/DataInitializer.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/security/DataInitializer.java",
+  },
+  {
+    template: "infra/dto/common/PageResponseDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/common/PageResponseDTO.java",
+  },
+  {
+    template: "infra/exception/GlobalExceptionHandler.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/exception/GlobalExceptionHandler.java",
+  },
+  {
+    template: "infra/exception/ResourceNotFoundException.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/exception/ResourceNotFoundException.java",
+  },
+  {
+    template: "infra/exception/TokenRefreshException.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/exception/TokenRefreshException.java",
+  },
+  {
+    template: "infra/entity/administration/User.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/User.java",
+  },
+  {
+    template: "infra/entity/administration/Role.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Role.java",
+  },
+  {
+    template: "infra/entity/administration/RefreshToken.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/RefreshToken.java",
+  },
+  {
+    template: "infra/entity/administration/Site.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Site.java",
+  },
+  {
+    template: "infra/entity/administration/Groupe.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Groupe.java",
+  },
+  {
+    template: "infra/entity/administration/Profil.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Profil.java",
+  },
+  {
+    template: "infra/entity/administration/Application.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Application.java",
+  },
+  {
+    template: "infra/entity/administration/Fonctionnalite.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/Fonctionnalite.java",
+  },
+  {
+    template: "infra/entity/administration/UserSite.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/UserSite.java",
+  },
+  {
+    template: "infra/entity/administration/UserSiteDroits.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/UserSiteDroits.java",
+  },
+  {
+    template: "infra/entity/administration/GroupeRole.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeRole.java",
+  },
+  {
+    template: "infra/entity/administration/GroupeProfil.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/GroupeProfil.java",
+  },
+  {
+    template: "infra/entity/administration/ProfilDroit.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/entity/administration/ProfilDroit.java",
+  },
+  {
+    template: "infra/repository/administration/UserRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/UserRepository.java",
+  },
+  {
+    template: "infra/repository/administration/RoleRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/RoleRepository.java",
+  },
+  {
+    template: "infra/repository/administration/RefreshTokenRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/RefreshTokenRepository.java",
+  },
+  {
+    template: "infra/repository/administration/SiteRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/SiteRepository.java",
+  },
+  {
+    template: "infra/repository/administration/GroupeRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRepository.java",
+  },
+  {
+    template: "infra/repository/administration/ProfilRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/ProfilRepository.java",
+  },
+  {
+    template: "infra/repository/administration/ApplicationRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/ApplicationRepository.java",
+  },
+  {
+    template: "infra/repository/administration/FonctionnaliteRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/FonctionnaliteRepository.java",
+  },
+  {
+    template: "infra/repository/administration/UserSiteRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/UserSiteRepository.java",
+  },
+  {
+    template: "infra/repository/administration/UserSiteDroitsRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/UserSiteDroitsRepository.java",
+  },
+  {
+    template: "infra/repository/administration/GroupeRoleRepository.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/repository/administration/GroupeRoleRepository.java",
+  },
+  {
+    template: "infra/repository/administration/GroupeProfilRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/GroupeProfilRepository.java",
+  },
+  {
+    template: "infra/repository/administration/ProfilDroitRepository.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/repository/administration/ProfilDroitRepository.java",
+  },
+  {
+    template: "infra/service/administration/RefreshTokenService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/RefreshTokenService.java",
+  },
+  {
+    template: "infra/service/administration/impl/RefreshTokenServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/RefreshTokenServiceImpl.java",
+  },
+  {
+    template: "infra/dto/administration/UserDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/UserDTO.java",
+  },
+  {
+    template: "infra/dto/administration/RoleDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/RoleDTO.java",
+  },
+  {
+    template: "infra/dto/administration/SiteDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/SiteDTO.java",
+  },
+  {
+    template: "infra/dto/administration/GroupeDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeDTO.java",
+  },
+  {
+    template: "infra/dto/administration/ProfilDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDTO.java",
+  },
+  {
+    template: "infra/dto/administration/ApplicationDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/ApplicationDTO.java",
+  },
+  {
+    template: "infra/dto/administration/FonctionnaliteDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/FonctionnaliteDTO.java",
+  },
+  {
+    template: "infra/dto/administration/UserSiteDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDTO.java",
+  },
+  {
+    template: "infra/dto/administration/UserSiteDroitsDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/UserSiteDroitsDTO.java",
+  },
+  {
+    template: "infra/dto/administration/GroupeRoleDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeRoleDTO.java",
+  },
+  {
+    template: "infra/dto/administration/GroupeProfilDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/GroupeProfilDTO.java",
+  },
+  {
+    template: "infra/dto/administration/ProfilDroitDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/administration/ProfilDroitDTO.java",
+  },
+  {
+    template: "infra/dto/auth/DroitsDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/DroitsDTO.java",
+  },
+  {
+    template: "infra/dto/auth/FonctionnaliteAvecDroitsDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/FonctionnaliteAvecDroitsDTO.java",
+  },
+  {
+    template: "infra/dto/auth/SiteAllegeDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/SiteAllegeDTO.java",
+  },
+  {
+    template: "infra/mapper/administration/UserMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/UserMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/RoleMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/RoleMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/SiteMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/SiteMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/GroupeMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/ProfilMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/ApplicationMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/ApplicationMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/FonctionnaliteMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/FonctionnaliteMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/UserSiteMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/UserSiteDroitsMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/UserSiteDroitsMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/GroupeRoleMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeRoleMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/GroupeProfilMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/GroupeProfilMapper.java",
+  },
+  {
+    template: "infra/mapper/administration/ProfilDroitMapper.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/mapper/administration/ProfilDroitMapper.java",
+  },
+  {
+    template: "infra/service/administration/UserService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/UserService.java",
+  },
+  {
+    template: "infra/service/administration/impl/UserServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/impl/UserServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/RoleService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/RoleService.java",
+  },
+  {
+    template: "infra/service/administration/impl/RoleServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/impl/RoleServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/SiteService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/SiteService.java",
+  },
+  {
+    template: "infra/service/administration/impl/SiteServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/impl/SiteServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/GroupeService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/GroupeService.java",
+  },
+  {
+    template: "infra/service/administration/impl/GroupeServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/impl/GroupeServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/ProfilService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/ProfilService.java",
+  },
+  {
+    template: "infra/service/administration/impl/ProfilServiceImpl.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/impl/ProfilServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/ApplicationService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/ApplicationService.java",
+  },
+  {
+    template: "infra/service/administration/impl/ApplicationServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/ApplicationServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/FonctionnaliteService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/FonctionnaliteService.java",
+  },
+  {
+    template: "infra/service/administration/impl/FonctionnaliteServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/FonctionnaliteServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/UserSiteService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteService.java",
+  },
+  {
+    template: "infra/service/administration/impl/UserSiteServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/UserSiteServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/UserSiteDroitsService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/UserSiteDroitsService.java",
+  },
+  {
+    template: "infra/service/administration/impl/UserSiteDroitsServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/UserSiteDroitsServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/GroupeRoleService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/GroupeRoleService.java",
+  },
+  {
+    template: "infra/service/administration/impl/GroupeRoleServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/GroupeRoleServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/GroupeProfilService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/GroupeProfilService.java",
+  },
+  {
+    template: "infra/service/administration/impl/GroupeProfilServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/GroupeProfilServiceImpl.java",
+  },
+  {
+    template: "infra/service/administration/ProfilDroitService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/administration/ProfilDroitService.java",
+  },
+  {
+    template: "infra/service/administration/impl/ProfilDroitServiceImpl.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/service/administration/impl/ProfilDroitServiceImpl.java",
+  },
+  {
+    template: "infra/controller/administration/UserController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/UserController.java",
+  },
+  {
+    template: "infra/controller/administration/RoleController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/RoleController.java",
+  },
+  {
+    template: "infra/controller/administration/SiteController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/SiteController.java",
+  },
+  {
+    template: "infra/controller/administration/GroupeController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeController.java",
+  },
+  {
+    template: "infra/controller/administration/ProfilController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/ProfilController.java",
+  },
+  {
+    template: "infra/controller/administration/ApplicationController.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/controller/administration/ApplicationController.java",
+  },
+  {
+    template: "infra/controller/administration/FonctionnaliteController.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/controller/administration/FonctionnaliteController.java",
+  },
+  {
+    template: "infra/controller/administration/UserSiteController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/UserSiteController.java",
+  },
+  {
+    template: "infra/controller/administration/UserSiteDroitsController.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/controller/administration/UserSiteDroitsController.java",
+  },
+  {
+    template: "infra/controller/administration/GroupeRoleController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/administration/GroupeRoleController.java",
+  },
+  {
+    template: "infra/controller/administration/GroupeProfilController.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/controller/administration/GroupeProfilController.java",
+  },
+  {
+    template: "infra/controller/administration/ProfilDroitController.java.hbs",
+    outPath: () =>
+      "src/main/java/com/stockpro/controller/administration/ProfilDroitController.java",
+  },
+  {
+    template: "infra/service/auth/AuthorizationService.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/service/auth/AuthorizationService.java",
+  },
+  {
+    template: "infra/controller/auth/AuthController.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/controller/auth/AuthController.java",
+  },
+  {
+    template: "infra/dto/auth/LoginRequestDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/LoginRequestDTO.java",
+  },
+  {
+    template: "infra/dto/auth/AuthResponseDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/AuthResponseDTO.java",
+  },
+  {
+    template: "infra/dto/auth/RefreshRequestDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/RefreshRequestDTO.java",
+  },
+  {
+    template: "infra/dto/auth/MeResponseDTO.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/dto/auth/MeResponseDTO.java",
+  },
+  {
+    template: "infra/util/ExcelExporter.java.hbs",
+    outPath: () => "src/main/java/com/stockpro/util/ExcelExporter.java",
+  },
 ];
 
 function loadTemplates(selectedLayers = [...LAYERS, ...CORE_LAYERS]) {
@@ -181,18 +637,81 @@ function loadTemplates(selectedLayers = [...LAYERS, ...CORE_LAYERS]) {
 }
 
 function toKebabCase(value) {
-  return value.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .toLowerCase();
 }
 function defaultPermissionCode(name) {
   return `ADMIN_${name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
 }
 
 function javaTypeToTsType(javaType) {
-  return {
-    UUID: "string", String: "string", Integer: "number", Long: "number",
-    Double: "number", Float: "number", BigDecimal: "number", Boolean: "boolean",
-    LocalDate: "string", LocalDateTime: "string",
-  }[javaType] || "unknown";
+  return (
+    {
+      UUID: "string",
+      String: "string",
+      Integer: "number",
+      Long: "number",
+      Double: "number",
+      Float: "number",
+      BigDecimal: "number",
+      Boolean: "boolean",
+      LocalDate: "string",
+      LocalDateTime: "string",
+    }[javaType] || "unknown"
+  );
+}
+
+function toPascalCase(value) {
+  return String(value)
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join("");
+}
+
+function toSnakeUpper(value) {
+  return String(value)
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toUpperCase();
+}
+
+function isCoreEntityName(name) {
+  return CORE_ENTITY_NAMES.has(name);
+}
+
+function canonicalizeReservedEntities(entities) {
+  for (const entity of entities) {
+    if (!isCoreEntityName(entity.name)) continue;
+    const idField = CORE_ENTITY_IDS[entity.name];
+    if (idField) {
+      entity.idField = idField;
+      entity.idFieldCap = toPascalCase(idField);
+      entity.idColumn = toSnakeUpper(idField);
+    }
+    const canonical = CORE_ENTITY_FIELDS[entity.name];
+    if (canonical) {
+      entity.fields = canonical.map((field) => ({
+        name: field.name,
+        nameCap: toPascalCase(field.name),
+        columnName: toSnakeUpper(field.name),
+        javaType: field.javaType,
+        required: field.required || undefined,
+        errorMessage: field.required ? `Le champ ${field.name} est obligatoire` : undefined,
+        writeOnly: field.writeOnly || undefined,
+      }));
+      entity.defaultSortField = entity.fields[0].name;
+      entity.exportColumns = entity.fields.map((field) => ({
+        nameCap: field.nameCap,
+        label: field.name,
+      }));
+    }
+    entity.manyToOne = [];
+    entity.oneToMany = [];
+    entity.relationIds = [];
+    entity.customFinders = [];
+  }
 }
 
 function isJavaIdentifier(value) {
@@ -251,14 +770,15 @@ function normalizeEntity(entity, source) {
     ].filter(Boolean),
   }));
 
-  normalized.hasValidation = normalized.fields.some((field) =>
-    field.required || field.email || field.minLength || field.maxLength
+  normalized.hasValidation = normalized.fields.some(
+    (field) => field.required || field.email || field.minLength || field.maxLength,
   );
+  normalized.hasStringFields = normalized.fields.some((field) => field.javaType === "String");
   normalized.hasWriteOnlyField = normalized.fields.some((field) => field.writeOnly);
   normalized.hasOneToMany = normalized.oneToMany.length > 0;
   normalized.hasManyToOne = normalized.manyToOne.length > 0;
   normalized.needsLocalDate = normalized.fields.some((field) =>
-    ["LocalDate", "LocalDateTime"].includes(field.javaType)
+    ["LocalDate", "LocalDateTime"].includes(field.javaType),
   );
   normalized.needsPage = entity.features?.pagination !== false;
   const securityLevel = entity.securityLevel || "medium";
@@ -272,8 +792,10 @@ function normalizeEntity(entity, source) {
   }
   normalized.securityLevel = securityLevel;
   normalized.securityOperations = Object.fromEntries(
-    ["consultation", "export", "ajout", "modification", "suppression"]
-      .map((operation) => [operation, securityOperations.includes(operation)])
+    ["consultation", "export", "ajout", "modification", "suppression"].map((operation) => [
+      operation,
+      securityOperations.includes(operation),
+    ]),
   );
   normalized.features = {
     pagination: normalized.needsPage,
@@ -283,7 +805,8 @@ function normalizeEntity(entity, source) {
     validation: normalized.hasValidation,
   };
 
-  const usesList = normalized.features.pagination ||
+  const usesList =
+    normalized.features.pagination ||
     normalized.features.export ||
     normalized.securityOperations.consultation;
   const usesMap = normalized.features.pagination || normalized.features.export;
@@ -303,7 +826,9 @@ function normalizeEntity(entity, source) {
   }
   for (const relation of normalized.manyToOne) {
     if (!relation.target || !relation.fieldName || !relation.joinColumn) {
-      throw new Error(`${source}: every manyToOne relation needs target, fieldName, and joinColumn`);
+      throw new Error(
+        `${source}: every manyToOne relation needs target, fieldName, and joinColumn`,
+      );
     }
     relation.fieldNameCap = relation.fieldNameCap || capitalize(relation.fieldName);
     relation.targetModule = relation.targetModule || normalized.module;
@@ -314,28 +839,46 @@ function normalizeEntity(entity, source) {
     relation.idFieldName = `${relation.fieldName}Id`;
     relation.idOptional = relation.nullable !== false;
     if (!VALID_ID_TYPES.includes(relation.targetIdType)) {
-      throw new Error(`${source}: relation '${relation.fieldName}' targetIdType must be one of ${VALID_ID_TYPES.join(", ")}`);
+      throw new Error(
+        `${source}: relation '${relation.fieldName}' targetIdType must be one of ${VALID_ID_TYPES.join(", ")}`,
+      );
     }
   }
   normalized.manyToOneImports = [];
   normalized.manyToOneRepoImports = [];
   for (const relation of normalized.manyToOne) {
-    if (relation.targetModule !== normalized.module && !normalized.manyToOneImports.find((r) => r.module === relation.targetModule && r.name === relation.target)) {
+    if (
+      relation.targetModule !== normalized.module &&
+      !normalized.manyToOneImports.find(
+        (r) => r.module === relation.targetModule && r.name === relation.target,
+      )
+    ) {
       normalized.manyToOneImports.push({ module: relation.targetModule, name: relation.target });
     }
-    if (!normalized.manyToOneRepoImports.find((r) => r.module === relation.targetModule && r.name === relation.target)) {
-      normalized.manyToOneRepoImports.push({ module: relation.targetModule, name: relation.target });
+    if (
+      !normalized.manyToOneRepoImports.find(
+        (r) => r.module === relation.targetModule && r.name === relation.target,
+      )
+    ) {
+      normalized.manyToOneRepoImports.push({
+        module: relation.targetModule,
+        name: relation.target,
+      });
     }
   }
   for (const relation of normalized.relationIds) {
     if (!relation.target || !relation.fieldName || !relation.targetIdField) {
-      throw new Error(`${source}: every relationIds entry needs target, fieldName, and targetIdField`);
+      throw new Error(
+        `${source}: every relationIds entry needs target, fieldName, and targetIdField`,
+      );
     }
     relation.fieldNameCap = relation.fieldNameCap || capitalize(relation.fieldName);
     relation.targetIdFieldCap = relation.targetIdFieldCap || capitalize(relation.targetIdField);
     relation.targetIdType = relation.targetIdType || "UUID";
     if (!VALID_ID_TYPES.includes(relation.targetIdType)) {
-      throw new Error(`${source}: relationIds '${relation.fieldName}' targetIdType must be one of ${VALID_ID_TYPES.join(", ")}`);
+      throw new Error(
+        `${source}: relationIds '${relation.fieldName}' targetIdType must be one of ${VALID_ID_TYPES.join(", ")}`,
+      );
     }
   }
   normalized.customFinderEntityImports = [];
@@ -365,7 +908,11 @@ function loadSchemas(inputPath) {
   }
   const stat = fs.statSync(inputPath);
   const files = stat.isDirectory()
-    ? fs.readdirSync(inputPath).filter((f) => f.endsWith(".json")).sort().map((f) => path.join(inputPath, f))
+    ? fs
+        .readdirSync(inputPath)
+        .filter((f) => f.endsWith(".json"))
+        .sort()
+        .map((f) => path.join(inputPath, f))
     : [inputPath];
 
   return files.map((file) => {
@@ -395,24 +942,114 @@ function writeFile(filePath, content, options, report) {
     return;
   }
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content, "utf8");
+  const normalizedContent = filePath.endsWith(`${path.sep}application.yml`)
+    ? normalizeApplicationYaml(content)
+    : content;
+  fs.writeFileSync(filePath, normalizedContent, "utf8");
   report.written += 1;
   console.log(`  wrote           ${filePath}`);
+}
+
+function normalizeApplicationYaml(content) {
+  const lines = content.replace(/\t/g, "  ").split("\n");
+  const hasUnindentedNestedKey = lines.some((line) =>
+    /^(application|datasource|jpa|flyway|sql|servlet|cors|api-docs|swagger-ui):/.test(line),
+  );
+  if (!hasUnindentedNestedKey && lines.some((line) => /^ {2}\S/.test(line))) {
+    return lines.join("\n");
+  }
+
+  const value = (key, fallback, occurrence = 0) => {
+    const matches = lines.filter((candidate) => candidate.trimStart().startsWith(`${key}:`));
+    const line = matches[occurrence];
+    return line
+      ? line
+          .trim()
+          .slice(key.length + 1)
+          .trim()
+      : fallback;
+  };
+
+  return [
+    "spring:",
+    "  application:",
+    `    name: ${value("name", "stockpro-back")}`,
+    "  datasource:",
+    `    url: ${value("url", "")}`,
+    `    username: ${value("username", "sa")}`,
+    `    password: ${value("password", "")}`,
+    "  jpa:",
+    "    hibernate:",
+    `      ddl-auto: ${value("ddl-auto", "update")}`,
+    `    open-in-view: ${value("open-in-view", "false")}`,
+    `    show-sql: ${value("show-sql", "false")}`,
+    "  flyway:",
+    `    enabled: ${value("enabled", "false")}`,
+    "  sql:",
+    "    init:",
+    `      mode: ${value("mode", "never")}`,
+    "  servlet:",
+    "    multipart:",
+    `      max-file-size: ${value("max-file-size", "10MB")}`,
+    `      max-request-size: ${value("max-request-size", "10MB")}`,
+    "",
+    "server:",
+    `  port: ${value("port", "8081")}`,
+    "",
+    "jwt:",
+    `  secret: ${value("secret", "")}`,
+    `  expiration-ms: ${value("expiration-ms", "900000")}`,
+    `  refresh-expiration-ms: ${value("refresh-expiration-ms", "86400000")}`,
+    "",
+    "app:",
+    "  cors:",
+    `    allowed-origins: ${value("allowed-origins", "")}`,
+    "",
+    "springdoc:",
+    "  api-docs:",
+    `    path: ${value("path", "/v3/api-docs")}`,
+    "  swagger-ui:",
+    `    path: ${value("path", "/swagger-ui.html", 1)}`,
+    "",
+  ].join("\n");
 }
 
 function writeGeneratedManifest(outputRoot, entities, options, report) {
   const manifestPath = path.join(outputRoot, "project.json");
   if (fs.existsSync(manifestPath)) return;
-  writeFile(manifestPath, `${JSON.stringify({
-    targets: ["backend"],
-    entityCount: entities.length,
-    generationOrder: entities.map((entity) => entity.name),
-    schemaVersion: "1.0.0",
-    generatedBy: "stockpro-backend-generator",
-  }, null, 2)}\n`, options, report);
+  writeFile(
+    manifestPath,
+    `${JSON.stringify(
+      {
+        targets: ["backend"],
+        entityCount: entities.length,
+        generationOrder: entities.map((entity) => entity.name),
+        schemaVersion: "1.0.0",
+        generatedBy: "stockpro-backend-generator",
+      },
+      null,
+      2,
+    )}\n`,
+    options,
+    report,
+  );
 }
 
 function generateEntity(entity, compiled, outputRoot, options, report, schemaOutputPaths) {
+  if (isCoreEntityName(entity.name)) {
+    const javaRoot = path.join(outputRoot, "src/main/java/com/stockpro");
+    for (const layer of LAYERS) {
+      const outFile = path.join(javaRoot, layer.outPath(entity));
+      if (options.dryRun) {
+        report.planned += 1;
+        console.log(`  plan   (core) ${outFile}`);
+      } else {
+        report.skipped += 1;
+        console.log(`  skip   (core) ${outFile}`);
+      }
+    }
+    return;
+  }
   const javaRoot = path.join(outputRoot, "src/main/java/com/stockpro");
   console.log(`\n${entity.name} (${entity.module})`);
   for (const layer of LAYERS) {
@@ -485,6 +1122,7 @@ function main() {
     const templateLayers = [...LAYERS, ...CORE_LAYERS];
     const compiled = loadTemplates(templateLayers);
     const schemas = loadSchemas(schemaInput);
+    canonicalizeReservedEntities(schemas);
     const names = new Set();
     const report = { written: 0, skipped: 0, planned: 0 };
     const schemaOutputPaths = new Set();
@@ -504,7 +1142,9 @@ function main() {
     }
     generateCore(compiled, backendRoot, { force, dryRun }, report, schemaOutputPaths, schemas);
     writeGeneratedManifest(outputDir, schemas, { force, dryRun }, report);
-    console.log(`\nSummary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`);
+    console.log(
+      `\nSummary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`,
+    );
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
@@ -521,4 +1161,9 @@ module.exports = {
   validateSchemaSet,
   validateEntitySchema: validateModule.validateEntitySchema,
   generateEntity,
+  isCoreEntityName,
+  canonicalizeReservedEntities,
+  CORE_ENTITY_NAMES,
+  CORE_ENTITY_FIELDS,
+  CORE_ENTITY_IDS,
 };
