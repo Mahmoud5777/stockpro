@@ -1,0 +1,157 @@
+package com.stockpro.security;
+
+import com.stockpro.entity.administration.Application;
+import com.stockpro.entity.administration.Fonctionnalite;
+import com.stockpro.entity.administration.Profil;
+import com.stockpro.entity.administration.ProfilDroit;
+import com.stockpro.entity.administration.Site;
+import com.stockpro.entity.administration.User;
+import com.stockpro.entity.administration.UserSite;
+import com.stockpro.entity.administration.UserSiteDroits;
+import com.stockpro.repository.administration.ApplicationRepository;
+import com.stockpro.repository.administration.FonctionnaliteRepository;
+import com.stockpro.repository.administration.ProfilDroitRepository;
+import com.stockpro.repository.administration.ProfilRepository;
+import com.stockpro.repository.administration.SiteRepository;
+import com.stockpro.repository.administration.UserRepository;
+import com.stockpro.repository.administration.UserSiteDroitsRepository;
+import com.stockpro.repository.administration.UserSiteRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Amorçage d'un compte administrateur avec l'ensemble du domaine d'administration :
+ * application, fonctionnalités, profil "Super Administrateur" avec tous les droits,
+ * site par défaut, et affectation de l'admin à ce site avec ce profil.
+ * <p>
+ * Le compte seed est login {@code admin} / mot de passe {@code admin123}. Il obtient
+ * ainsi de vrais droits (via SUPERADMIN) pour pouvoir utiliser les écrans
+ * d'administration au premier lancement local. À désactiver/sécuriser en production.
+ */
+@Component
+@RequiredArgsConstructor
+public class DataInitializer {
+
+    private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
+    private final FonctionnaliteRepository fonctionnaliteRepository;
+    private final ProfilRepository profilRepository;
+    private final ProfilDroitRepository profilDroitRepository;
+    private final SiteRepository siteRepository;
+    private final UserSiteRepository userSiteRepository;
+    private final UserSiteDroitsRepository userSiteDroitsRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @PostConstruct
+    @Transactional
+    public void init() {
+        Application app = applicationRepository.findByCodeApp("STOCKPRO")
+                .orElseGet(() -> applicationRepository.save(Application.builder()
+                        .codeApp("STOCKPRO")
+                        .nomApp("StockPro")
+                        .version("1.0")
+                        .build()));
+
+        List<Fonctionnalite> fonctionnalites = seedFonctionnalites(app);
+
+        Profil profil = profilRepository.findByCodeProfil("SUPERADMIN")
+                .orElseGet(() -> profilRepository.save(Profil.builder()
+                        .codeProfil("SUPERADMIN")
+                        .libelle("Super Administrateur")
+                        .description("Accès complet à toutes les fonctionnalités (créé automatiquement pour le premier compte admin)")
+                        .build()));
+
+        seedProfilDroits(profil, fonctionnalites);
+
+        Site site = siteRepository.findByCodeSite("SIEGE")
+                .orElseGet(() -> siteRepository.save(Site.builder()
+                        .codeSite("SIEGE")
+                        .nomSite("Siège")
+                        .build()));
+
+        User admin = userRepository.findByLogin("admin").orElse(null);
+        if (admin == null) {
+            admin = userRepository.save(User.builder()
+                    .login("admin")
+                    .motPasse(passwordEncoder.encode("admin123"))
+                    .nomComplet("Administrateur")
+                    .email("admin@stockpro.local")
+                    .etatCompte(true)
+                    .doitChangerMdp(false)
+                    .build());
+        }
+
+        seedUserAffectations(admin, site, profil);
+    }
+
+    private List<Fonctionnalite> seedFonctionnalites(Application app) {
+        record FonctionnaliteSeed(String code, String libelle, int ordre) {
+        }
+        List<FonctionnaliteSeed> seeds = List.of(
+                new FonctionnaliteSeed("ADMIN_UTILISATEURS", "Users", 1),
+                new FonctionnaliteSeed("ADMIN_SITES", "Sites", 2),
+                new FonctionnaliteSeed("ADMIN_PROFILS", "Profils", 3),
+                new FonctionnaliteSeed("ADMIN_ROLES", "Roles", 4),
+                new FonctionnaliteSeed("ADMIN_GROUPES", "Groupes", 5),
+                new FonctionnaliteSeed("ADMIN_FONCTIONNALITES", "Fonctions", 6),
+                new FonctionnaliteSeed("ADMIN_AUDIT", "Audit", 7),
+                new FonctionnaliteSeed("ADMIN_PRODUCT", "Product", 0 + 100),
+                new FonctionnaliteSeed("ADMIN_CATEGORY", "Category", 1 + 100),
+                new FonctionnaliteSeed("ADMIN_CUSTOMER", "Customer", 2 + 100));
+
+        return seeds.stream()
+                .map(s -> fonctionnaliteRepository.findByCodeFonc(s.code())
+                        .orElseGet(() -> fonctionnaliteRepository.save(Fonctionnalite.builder()
+                                .codeFonc(s.code())
+                                .libelle(s.libelle())
+                                .orderAffichage(s.ordre())
+                                .actif(true)
+                                .application(app)
+                                .build())))
+                .toList();
+    }
+
+    private void seedProfilDroits(Profil profil, List<Fonctionnalite> fonctionnalites) {
+        for (Fonctionnalite f : fonctionnalites) {
+            boolean exists = profilDroitRepository.findByProfil_IdPr(profil.getIdPr()).stream()
+                    .anyMatch(pd -> pd.getFonctionnalite() != null
+                            && pd.getFonctionnalite().getIdFonc().equals(f.getIdFonc()));
+            if (!exists) {
+                profilDroitRepository.save(ProfilDroit.builder()
+                        .profil(profil)
+                        .fonctionnalite(f)
+                        .consultation(true)
+                        .ajout(true)
+                        .modification(true)
+                        .suppression(true)
+                        .impression(true)
+                        .export(true)
+                        .build());
+            }
+        }
+    }
+
+    private void seedUserAffectations(User admin, Site site, Profil profil) {
+        UserSite userSite = userSiteRepository.findByUser_IdUtil(admin.getIdUtil()).stream()
+                .filter(us -> us.getSite() != null && us.getSite().getIdSite().equals(site.getIdSite()))
+                .findFirst()
+                .orElseGet(() -> userSiteRepository.save(UserSite.builder()
+                        .user(admin)
+                        .site(site)
+                        .build()));
+
+        boolean aDroits = userSiteDroitsRepository.findByUserSite_IdUtilSite(userSite.getIdUtilSite()).stream()
+                .anyMatch(d -> d.getProfil() != null && d.getProfil().getIdPr().equals(profil.getIdPr()));
+        if (!aDroits) {
+            userSiteDroitsRepository.save(UserSiteDroits.builder()
+                    .userSite(userSite)
+                    .profil(profil)
+                    .build());
+        }
+    }
+}

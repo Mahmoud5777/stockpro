@@ -1,0 +1,18 @@
+{
+  "name": "site-to-spack",
+  "version": "0.1.0",
+  "description": "Design extractor: turn a website URL, GitHub repo or local dir into a .spack frontend template pack (colors, typography, animations, button shapes).",
+  "main": "extract-design.js",
+  "scripts": {
+    "extract": "node extract-design.js",
+    "pack": "node design-to-spack.js",
+    "test": "node --test"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "handlebars": "^4.7.9",
+    "postcss": "^8.4.49",
+    "postcss-value-parser": "^4.2.0"
+  },
+  "author": ""
+}

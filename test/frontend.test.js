@@ -82,6 +82,8 @@ test("wizard both target writes a unified manifest and a runnable Next.js client
     }
   }
   assert.equal(leaks, 0);
+  const verified = spawnSync(process.execPath, [path.join(root, "verify-app.js"), out], { encoding: "utf8" });
+  assert.equal(verified.status, 0, verified.stderr || verified.stdout);
 });
 
 test("generate-frontend with next emits a runnable scaffold from schemas", () => {

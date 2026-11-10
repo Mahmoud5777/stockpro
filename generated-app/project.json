@@ -1,5 +1,8 @@
 {
-  "targets": ["backend", "frontend"],
+  "targets": [
+    "backend",
+    "frontend"
+  ],
   "appName": "StockPro",
   "appType": "REST API",
   "basePackage": "com.stockpro",
@@ -7,9 +10,9 @@
   "database": "postgresql",
   "buildTool": "maven",
   "javaVersion": "17",
-  "springBootVersion": "3.5.4",
+  "springBootVersion": "3.2.0",
   "security": {
-    "level": "high",
+    "level": "medium",
     "authenticationType": "jwt",
     "methodSecurity": true,
     "permissionPrefix": "ADMIN"
@@ -19,22 +22,31 @@
     "search": true,
     "filtering": true,
     "export": true,
-    "security": true,
-    "validation": true
+    "auditFields": true,
+    "softDelete": true,
+    "apiDocumentation": true
   },
-  "entityCount": 3,
-  "entityOrder": ["Product", "Category", "Customer"],
-  "generationOrder": ["Product", "Category", "Customer"],
   "frontend": {
     "framework": "next",
+    "buildTool": "next-cli",
     "uiLibrary": "tailwind",
     "state": "zustand",
     "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
       "i18n": false,
-      "darkMode": false,
-      "lazyRoutes": true
+      "theming": true
     }
   },
+  "entityCount": 1,
+  "entityOrder": [
+    "User"
+  ],
+  "generationOrder": [
+    "User"
+  ],
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-08-29T00:00:00.000Z"
+  "createdAt": "2026-10-04T20:06:45.467Z"
 }

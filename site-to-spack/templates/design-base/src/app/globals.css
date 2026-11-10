@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { --color-background:#f7f8fb; --color-surface:#fff; --color-text:#0f172a; --color-muted:#64748b; --color-primary:#2a48e6; --color-primary-hover:#2338c7; --font-inter:Inter,system-ui,sans-serif; --font-sora:Sora,system-ui,sans-serif; --font-body:Inter,system-ui,sans-serif; --font-display:Sora,system-ui,sans-serif; }
+  :root.dark { --color-background:#0f1424; --color-surface:#172033; --color-text:#e2e8f0; --color-muted:#94a3b8; }
+  body { background:var(--color-background); color:var(--color-text); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:var(--font-display); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  :focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
+}
+@layer components {
+  .card { background:var(--color-surface); border:1px solid color-mix(in srgb,var(--color-text) 8%,transparent); border-radius: .85rem; box-shadow:0 1px 3px rgb(16 24 40 / .08); }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors; }
+  .btn-primary { background:var(--color-primary); color:white; }
+  .btn-primary:hover { background:var(--color-primary-hover); }
+  .btn-outline { border:1px solid color-mix(in srgb,var(--color-text) 20%,transparent); color:var(--color-text); }
+  .btn-outline:hover { background:color-mix(in srgb,var(--color-text) 5%,transparent); }
+  .input { @apply w-full rounded-lg px-3 py-2.5 text-sm; background:var(--color-surface); color:var(--color-text); border:1px solid color-mix(in srgb,var(--color-text) 20%,transparent); }
+  .table-head { color:var(--color-muted); background:color-mix(in srgb,var(--color-text) 3%,var(--color-surface)); }
+  .table-row { border-bottom:1px solid color-mix(in srgb,var(--color-text) 7%,transparent); }
+  .table-row:hover { background:color-mix(in srgb,var(--color-primary) 3%,var(--color-surface)); }
+  .status-active { @apply rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700; }
+  .status-inactive { @apply rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500; }
+  .sidebar { background:#0f1424; color:#cbd5e1; }
+  .sidebar-link { @apply block rounded-lg px-3 py-2.5 text-sm transition-colors; }
+  .sidebar-link:hover { background:rgb(255 255 255 / .05); color:white; }
+  .sidebar-link.active { background:var(--color-primary); color:white; }
+  .text-muted { color:var(--color-muted); }
+  .text-primary { color:var(--color-primary); }
+  .topbar { background:var(--color-surface); border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent); }
+}
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }

@@ -1,0 +1,17 @@
+{
+  "entity": {
+    "name": "Invoice", "module": "billing", "tableName": "INVOICES",
+    "idField": "invoiceId", "idColumn": "INVOICE_ID", "idType": "String", "urlPath": "invoices",
+    "securityLevel": "high", "features": { "pagination": true, "search": false, "security": false },
+    "fields": [
+      { "name": "title", "javaType": "String" },
+      { "name": "amount", "javaType": "BigDecimal" },
+      { "name": "issuedAt", "javaType": "LocalDateTime" },
+      { "name": "reference", "javaType": "UUID" }
+    ],
+    "manyToOne": [
+      { "target": "Supplier", "targetModule": "crm", "fieldName": "supplier", "joinColumn": "SUPPLIER_ID", "targetIdType": "Long", "targetIdField": "supplierId", "nullable": false },
+      { "target": "Supplier", "targetModule": "crm", "fieldName": "backupSupplier", "joinColumn": "BACKUP_SUPPLIER_ID", "targetIdType": "Long", "targetIdField": "supplierId", "nullable": true }
+    ]
+  }
+}

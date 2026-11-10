@@ -31,7 +31,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.setItem("stockpro_token", token);
     }
-    set({ token, user });
+    set({ token, user: null });
+    void get().loadUser();
   },
   logout: () => {
     if (typeof window !== "undefined") {

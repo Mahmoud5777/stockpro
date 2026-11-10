@@ -11,6 +11,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const readline = require("node:readline");
 const { spawnSync } = require("node:child_process");
+const { choiceIndex, interactiveInterface } = require("./lib/prompts");
+const { writeDevScripts } = require("./lib/dev-scripts");
 
 const root = __dirname;
 const IS_TTY = Boolean(process.stdin.isTTY);
@@ -45,8 +47,11 @@ function askInterface() {
         process.stdout.write(prompt);
         callback(answers[index++] || "");
       },
-      close() {},
+      close() { },
     };
+  }
+  if (process.stdout.isTTY && typeof process.stdin.setRawMode === "function") {
+    return interactiveInterface();
   }
   return readline.createInterface({ input: process.stdin, output: process.stdout });
 }
@@ -59,6 +64,11 @@ function ask(rl, label, defaultValue = "") {
 }
 
 function askBool(rl, label, defaultValue = true) {
+  if (rl.select) {
+    return rl.select(label, ["Oui", "Non"], defaultValue ? 0 : 1, {
+      y: 0, yes: 0, o: 0, oui: 0, n: 1, no: 1, non: 1,
+    }).then((answer) => answer === "Oui");
+  }
   const def = defaultValue ? "Y/n" : "y/N";
   return new Promise((resolve) =>
     rl.question(`  ${label} (${def}): `, (answer) => {
@@ -71,14 +81,15 @@ function askBool(rl, label, defaultValue = true) {
 }
 
 function choose(rl, label, options, defaultValueIndex = 0) {
+  if (rl.select) return rl.select(label, options, defaultValueIndex);
   const defaultVal = options[defaultValueIndex];
   const prompt = `  ${label} (${options.map((o, i) => (i === defaultValueIndex ? o : o)).join(" / ")}): `;
   return new Promise((resolve) => {
     const loop = () => {
       rl.question(prompt, (answer) => {
         const v = answer.trim();
-        if (v === "" ) return resolve(defaultVal);
-        const idx = options.findIndex((o) => o.toLowerCase() === v.toLowerCase());
+        if (v === "") return resolve(defaultVal);
+        const idx = choiceIndex(v, options);
         if (idx >= 0) return resolve(options[idx]);
         console.log(`    Choix invalide. Options: ${options.join(", ")}`);
         loop();
@@ -347,6 +358,16 @@ async function runWizard() {
   }
   rl.close();
 
+  // Resolve after every entity has been collected, including forward references.
+  for (const entity of entities) {
+    for (const relation of [...entity.manyToOne, ...entity.oneToMany]) {
+      const target = entities.find((candidate) => candidate.name === relation.target);
+      if (!target) throw new Error(`Relation target '${relation.target}' is not defined`);
+      relation.targetModule = target.module;
+      relation.targetIdType = target.idType;
+      relation.targetIdField = target.idField;
+    }
+  }
   const absoluteOutput = path.resolve(outputDir);
   const schemaDir = path.join(absoluteOutput, "schemas");
   fs.mkdirSync(schemaDir, { recursive: true });
@@ -413,35 +434,8 @@ function runInstructions(parts) {
   if (parts.client) {
     console.log(`  Frontend : cd "${parts.client}" && npm install && npm run dev  ->  http://localhost:3000`);
   }
-  console.log(`  Raccourci: "${parts.output}\\dev-run.ps1" (Windows) ou "${parts.output}\\dev-run.sh"`);
+  console.log(`  Raccourci: "${parts.output}\\dev-run.cmd" (Windows) ou "${parts.output}\\dev-run.sh"`);
   console.log(`  Vérifier : npm run test-app -- "${parts.output}"`);
-}
-
-function writeDevScripts(absoluteOutput, serverRoot, clientRoot) {
-  fs.mkdirSync(absoluteOutput, { recursive: true });
-  if (serverRoot) {
-    const ps1 = [
-      "# StockPro generated app - development launcher",
-      `param([switch]$NoInstall)`,
-      `Write-Host "Starting backend on :8080..."`,
-      `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, serverRoot)}\\\`"; mvn spring-boot:run")`,
-    ];
-    if (clientRoot) {
-      ps1.push(
-        `Write-Host "Starting frontend on :3000..."`,
-        `if (-not $NoInstall) { Push-Location "$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}"; npm install; Pop-Location }`,
-        `Start-Process powershell -ArgumentList @("-NoExit","-Command","Set-Location \\\`"$PSScriptRoot\\${path.relative(absoluteOutput, clientRoot)}\\\`"; npm run dev")`
-      );
-    }
-    fs.writeFileSync(path.join(absoluteOutput, "dev-run.ps1"), ps1.join("\r\n") + "\r\n");
-  }
-  if (serverRoot || clientRoot) {
-    const sh = ["#!/usr/bin/env bash", `set -e`, `DIR="$(cd "$(dirname "$0")" && pwd)"`];
-    if (serverRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, serverRoot).replace(/\\/g, "/")}" && mvn spring-boot:run ) &`);
-    if (clientRoot) sh.push(`( cd "$DIR/${path.relative(absoluteOutput, clientRoot).replace(/\\/g, "/")}" && npm install && npm run dev ) &`);
-    sh.push(`wait`);
-    fs.writeFileSync(path.join(absoluteOutput, "dev-run.sh"), sh.join("\n") + "\n");
-  }
 }
 
 async function finishAndSupportRun(absoluteOutput, { targets, serverRoot, clientRoot }) {
@@ -465,24 +459,30 @@ async function finishAndSupportRun(absoluteOutput, { targets, serverRoot, client
   } else if (forceRun) {
     runNow = true;
   } else if (IS_TTY) {
-    runNow = await new Promise((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      rl.question("  Lancer l'application maintenant ? (y/N): ", (answer) => {
-        rl.close();
-        const v = answer.trim().toLowerCase();
-        resolve(v === "y" || v === "yes" || v === "o" || v === "oui");
-      });
-    });
+    const rl = askInterface();
+    try {
+      runNow = await askBool(rl, "Lancer l'application maintenant ?", false);
+    } finally {
+      rl.close();
+    }
   }
 
   if (runNow) {
     await launchGenerated(absoluteOutput, { targets, serverRoot, clientRoot });
   } else {
-    console.log("\nVous pouvez lancer l'application à tout moment avec le script dev-run.ps1 / dev-run.sh, ou en suivant les commandes ci-dessus.");
+    console.log("\nVous pouvez lancer l'application à tout moment avec dev-run.cmd (Windows) / dev-run.sh, ou en suivant les commandes ci-dessus.");
   }
 }
 
 function launchGenerated(absoluteOutput, { serverRoot, clientRoot }) {
+  if (process.platform === "win32") {
+    const result = spawnSync("powershell.exe", [
+      "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(absoluteOutput, "dev-run.ps1"),
+    ], { stdio: "inherit" });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error("Le lancement a échoué; consultez les messages ci-dessus.");
+    return;
+  }
   const spawn = require("node:child_process").spawn;
   if (clientRoot) {
     console.log(`\nInstallation des dépendances frontend (${clientRoot})...`);
@@ -502,6 +502,10 @@ function launchGenerated(absoluteOutput, { serverRoot, clientRoot }) {
 }
 
 runWizard().catch((error) => {
+  if (error.code === "PROMPT_CANCELLED") {
+    process.exitCode = 130;
+    return;
+  }
   console.error(`\nErreur: ${error.message}`);
   process.exitCode = 1;
 });

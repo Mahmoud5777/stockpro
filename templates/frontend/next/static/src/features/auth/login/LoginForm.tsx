@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginForm() {
+  const [error, setError] = useState("");
   const {
     register,
     handleSubmit,
@@ -24,29 +26,35 @@ export default function LoginForm() {
   const { setAuth } = useAuth();
 
   const onSubmit = async (values: FormValues) => {
-    const res = await apiClient.post("/api/auth/login", values);
-    setAuth(res.data.token, res.data);
-    router.replace("/dashboard");
+    setError("");
+    try {
+      const res = await apiClient.post("/api/auth/login", values);
+      setAuth(res.data.token, res.data);
+      router.replace("/dashboard");
+    } catch {
+      setError("Connexion impossible. Vérifiez vos identifiants et la disponibilité du serveur.");
+    }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
       <div>
-        <label className="block text-sm font-medium">Login</label>
+        <label htmlFor="login" className="block text-sm font-medium">Login</label>
         <input
           {...register("login")}
-          className="mt-1 w-full rounded border px-3 py-2"
+          id="login" autoComplete="username" className="input mt-1"
         />
         {errors.login && (
           <p className="text-sm text-red-500">{errors.login.message}</p>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium">Mot de passe</label>
+        <label htmlFor="password" className="block text-sm font-medium">Mot de passe</label>
         <input
           type="password"
           {...register("password")}
-          className="mt-1 w-full rounded border px-3 py-2"
+          id="password" autoComplete="current-password" className="input mt-1"
         />
         {errors.password && (
           <p className="text-sm text-red-500">{errors.password.message}</p>
@@ -55,7 +63,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50"
+        className="btn btn-primary w-full"
       >
         {isSubmitting ? "Connexion..." : "Se connecter"}
       </button>

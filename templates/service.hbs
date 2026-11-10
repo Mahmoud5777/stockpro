@@ -16,7 +16,7 @@ List<{{entity.name}}DTO> findAll();
     {{#if entity.features.pagination}}
     Page<{{entity.name}}DTO> findAll(Pageable pageable);
         {{/if}}
-        {{#if entity.features.search}}
+        {{#if entity.features.pagination}}
         Page<{{entity.name}}DTO> findAll(String search, Map<String, String> filters, Pageable pageable);
                 {{/if}}
                 {{#if entity.features.export}}

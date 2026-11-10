@@ -1,45 +1,26 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { entitiesRegistry } from "@/lib/entities-registry";
-import { useAuth } from "@/features/auth/useAuth";
+import { appConfig, entitiesRegistry } from "@/lib/entities-registry";
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
-
-  return (
-    <aside className="flex w-60 flex-col bg-slate-900 text-slate-100">
-      <div className="p-4 text-lg font-semibold">StockPro</div>
-      <nav className="flex-1 space-y-1 p-2">
-        <Link
-          href="/dashboard"
-          className="block rounded px-3 py-2 hover:bg-slate-700"
-        >
-          Tableau de bord
-        </Link>
-        {entitiesRegistry.map((e) => {
-          const active = pathname === `/${e.kebab}`;
-          return (
-            <Link
-              key={e.kebab}
-              href={`/${e.kebab}`}
-              className={`block rounded px-3 py-2 hover:bg-slate-700 ${
-                active ? "bg-slate-700" : ""
-              }`}
-            >
-              {e.label}
-            </Link>
-          );
-        })}
+  const modules = [...new Set(entitiesRegistry.map((entity) => entity.module))];
+  return <>
+    {open && <button aria-label="Fermer le menu" className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
+    <aside aria-label="Navigation principale" className={`sidebar fixed inset-y-0 left-0 z-40 flex w-[268px] shrink-0 flex-col transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
+      <Link href="/dashboard" onClick={onClose} className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white">S</span>
+        <span className="text-lg font-semibold text-white">{appConfig.name}</span>
+      </Link>
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        <Link href="/dashboard" onClick={onClose} aria-current={pathname === "/dashboard" ? "page" : undefined} className={`sidebar-link ${pathname === "/dashboard" ? "active" : ""}`}>Tableau de bord</Link>
+        {modules.map((module) => <div key={module}><p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">{module}</p>
+          <div className="space-y-1">{entitiesRegistry.filter((entity) => entity.module === module).map((entity) => <Link key={entity.kebab} href={`/${entity.kebab}`} onClick={onClose}
+            aria-current={pathname === `/${entity.kebab}` ? "page" : undefined} className={`sidebar-link ${pathname === `/${entity.kebab}` ? "active" : ""}`}>{entity.label}</Link>)}</div>
+        </div>)}
       </nav>
-      <div className="border-t border-slate-700 p-4 text-sm">
-        <div className="mb-2">{user?.login ?? ""}</div>
-        <button onClick={logout} className="text-red-300 hover:underline">
-          Déconnexion
-        </button>
-      </div>
+      <div className="border-t border-white/10 p-5 text-xs text-slate-400">{entitiesRegistry.length} modules de données</div>
     </aside>
-  );
+  </>;
 }

@@ -104,7 +104,8 @@ test("supports UUID, String and Long identifier types", () => {
             path.join(out, "src/main/java/com/stockpro/entity/administration/Sample.java"), "utf8");
         assert.match(entityFile, new RegExp(`private ${idType} id;`));
         if (idType === "UUID") assert.match(entityFile, /UUID\.randomUUID\(\)/);
-        if (idType === "Long") assert.match(entityFile, /System\.currentTimeMillis\(\)/);
+        if (idType === "Long") assert.match(entityFile, /GenerationType\.IDENTITY/);
+        if (idType === "String") assert.match(entityFile, /UUID\.randomUUID\(\)\.toString\(\)/);
     }
 });
 
@@ -166,8 +167,15 @@ test("security levels control which operations are exposed", () => {
     assert.equal(high.suppression, true);
 });
 
-test("generated-app passes formal verification", () => {
-    const res = spawnSync(process.execPath, [path.join(root, "verify-app.js"), "generated-app"],
+test("generated backend passes formal verification from an isolated fixture", () => {
+    const dir = temporaryDirectory();
+    writeSchema(dir, makeEntity());
+    const out = temporaryDirectory();
+    execFileSync(process.execPath, [generator, dir, out], { stdio: "pipe" });
+    fs.writeFileSync(path.join(out, "project.json"), JSON.stringify({
+        targets: ["backend"], entityCount: 1, generationOrder: ["Sample"],
+    }));
+    const res = spawnSync(process.execPath, [path.join(root, "verify-app.js"), out],
         { encoding: "utf8", cwd: root });
     assert.equal(res.status, 0, res.stderr);
     assert.match(res.stdout, /App test passed/);

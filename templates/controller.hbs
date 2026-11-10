@@ -46,7 +46,9 @@ private final {{entity.name}}Service {{entity.serviceVar}};
 
 {{#if entity.features.pagination}}
 {{#if entity.securityOperations.consultation}}
+{{#if entity.features.security}}
 @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+{{/if}}
 @GetMapping
 public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
     @RequestParam(required = false) String search,
@@ -58,7 +60,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
             {{/if}}
             {{else}}
             {{#if entity.securityOperations.consultation}}
-            @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+            {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+{{/if}}
             @GetMapping
             public ResponseEntity<List<{{entity.name}}DTO>> getAll() {
                 return ResponseEntity.ok({{entity.serviceVar}}.findAll());
@@ -69,7 +73,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
                 {{#if entity.features.export}}
                 {{#if entity.securityOperations.export}}
                 @Operation(summary = "Exporter les {{entity.tagLabelLower}} (recherche + filtres) en Excel (.xlsx)")
-                @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'EXPORT')")
+                {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'EXPORT')")
+{{/if}}
                 @GetMapping("/export")
                 public ResponseEntity<byte[]> export(
                     @RequestParam(required = false) String search,
@@ -88,8 +94,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
 
                                 {{#if entity.features.pagination}}
                                 {{#if entity.securityOperations.consultation}}
-                                @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
-                                'CONSULTATION')")
+                                {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+{{/if}}
                                 @GetMapping("/all")
                                 public ResponseEntity<List<{{entity.name}}DTO>> getAllUnpaged() {
                                     return ResponseEntity.ok({{entity.serviceVar}}.findAll());
@@ -98,8 +105,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
                                     {{/if}}
 
                                     {{#if entity.securityOperations.consultation}}
-                                    @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
-                                    'CONSULTATION')")
+                                    {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'CONSULTATION')")
+{{/if}}
                                     @GetMapping("/{id}")
                                     public ResponseEntity<{{entity.name}}DTO> getById(@PathVariable {{entity.idType}} id) {
                                         return ResponseEntity.ok({{entity.serviceVar}}.findById(id));
@@ -107,8 +115,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
                                         {{/if}}
 
                                         {{#if entity.securityOperations.ajout}}
-                                        @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
-                                        'AJOUT')")
+                                        {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'AJOUT')")
+{{/if}}
                                         @PostMapping
                                         public ResponseEntity<{{entity.name}}DTO> create({{#if
                                             entity.features.validation}}@Valid {{/if}}@RequestBody {{entity.name}}DTO
@@ -119,8 +128,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
                                             {{/if}}
 
                                             {{#if entity.securityOperations.modification}}
-                                            @PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}',
-                                            'MODIFICATION')")
+                                            {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'MODIFICATION')")
+{{/if}}
                                             @PutMapping("/{id}")
                                             public ResponseEntity<{{entity.name}}DTO> update(@PathVariable {{entity.idType}} id,
                                                 {{#if entity.features.validation}}@Valid {{/if}}@RequestBody
@@ -130,8 +140,9 @@ public ResponseEntity<PageResponseDTO<{{entity.name}}DTO>> getAll(
                                                 {{/if}}
 
                                                 {{#if entity.securityOperations.suppression}}
-                                                @PreAuthorize("@accessGuard.can(authentication,
-                                                '{{entity.permissionCode}}', 'SUPPRESSION')")
+                                                {{#if entity.features.security}}
+@PreAuthorize("@accessGuard.can(authentication, '{{entity.permissionCode}}', 'SUPPRESSION')")
+{{/if}}
                                                 @DeleteMapping("/{id}")
                                                 public ResponseEntity<Void> delete(@PathVariable {{entity.idType}} id) {
                                                     {{entity.serviceVar}}.delete(id);

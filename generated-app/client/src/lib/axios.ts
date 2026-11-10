@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8085",
-  withCredentials: true,
+  baseURL: "",
+  withCredentials: false,
 });
 
 apiClient.interceptors.request.use((config) => {

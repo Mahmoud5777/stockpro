@@ -273,9 +273,23 @@ function normalizeEntity(entity, source) {
     pagination: normalized.needsPage,
     export: entity.features?.export !== false && normalized.exportColumns.length > 0,
     search: entity.features?.search !== false,
+    filtering: entity.features?.filtering !== false,
     security: entity.features?.security !== false,
     validation: normalized.hasValidation,
   };
+  normalized.needsBigDecimal = normalized.fields.some((field) => field.javaType === "BigDecimal");
+  normalized.searchFields = normalized.fields.filter((field) => field.javaType === "String" && !field.writeOnly);
+  const parsers = { String: "value", UUID: "java.util.UUID.fromString(value)",
+    LocalDate: "java.time.LocalDate.parse(value)", LocalDateTime: "java.time.LocalDateTime.parse(value)",
+    BigDecimal: "new java.math.BigDecimal(value)" };
+  normalized.filterFields = normalized.fields.filter((field) => !field.writeOnly).map((field) => ({
+    ...field, filterExpression: parsers[field.javaType] || `${field.javaType}.valueOf(value)`,
+  }));
+  normalized.permissionCode = entity.permissionCode || `ADMIN_${entity.name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}`;
+  normalized.defaultSortField = entity.defaultSortField || entity.idField;
+  normalized.tagLabel = entity.tagLabel || `${entity.name}s`;
+  normalized.tagLabelLower = entity.tagLabelLower || normalized.tagLabel.toLowerCase();
+  if (!entity.updatableFields) normalized.updatableFields = normalized.fields.filter((field) => field.name !== entity.idField).map((field) => ({ nameCap: field.nameCap || capitalize(field.name) }));
 
   const usesList = normalized.features.pagination ||
       normalized.features.export ||
@@ -286,6 +300,7 @@ function normalizeEntity(entity, source) {
 
   normalized.needsUuidImport =
     normalized.idType === "UUID" ||
+    normalized.fields.some((field) => field.javaType === "UUID") ||
     normalized.manyToOne.some((r) => r.targetIdType === "UUID") ||
     normalized.relationIds.some((r) => r.targetIdType === "UUID");
 
@@ -330,6 +345,14 @@ function normalizeEntity(entity, source) {
     relation.targetIdType = relation.targetIdType || "UUID";
     if (!VALID_ID_TYPES.includes(relation.targetIdType)) {
       throw new Error(`${source}: relationIds '${relation.fieldName}' targetIdType must be one of ${VALID_ID_TYPES.join(", ")}`);
+    }
+  }
+  normalized.needsUuidImport = normalized.needsUuidImport || [...normalized.manyToOne, ...normalized.relationIds].some((relation) => relation.targetIdType === "UUID");
+  normalized.manyToOneResolvers = normalized.manyToOne.filter((relation, index, all) => all.findIndex((candidate) => candidate.target === relation.target && candidate.targetModule === relation.targetModule) === index);
+  for (const relation of normalized.oneToMany) {
+    const targetModule = relation.targetModule || normalized.module;
+    if (targetModule !== normalized.module && !normalized.manyToOneImports.some((item) => item.module === targetModule && item.name === relation.target)) {
+      normalized.manyToOneImports.push({ module: targetModule, name: relation.target });
     }
   }
   normalized.customFinderEntityImports = [];
@@ -410,12 +433,12 @@ function generateEntity(entity, compiled, outputRoot, options, report, schemaOut
 // Core layers that would overwrite a schema-driven entity on the same path are skipped,
 // so the schema definition of an entity always wins consistently (e.g. an admin entity
 // such as Role that the input schema also models).
-function generateCore(compiled, outputRoot, options, report, schemaOutputPaths) {
+function generateCore(compiled, outputRoot, options, report, schemaOutputPaths, entities = []) {
   console.log("\nCore (auth / infrastructure)");
   for (const layer of CORE_LAYERS) {
     const render = compiled[layer.template];
     if (!render) continue;
-    const content = render({});
+    const content = render({ entities });
     const outFile = path.normalize(path.join(outputRoot, layer.outPath()));
     if (schemaOutputPaths && schemaOutputPaths.has(outFile)) {
       if (options.dryRun) {
@@ -483,7 +506,7 @@ function main() {
       if (verbose) console.log(`Features: ${JSON.stringify(entity.features)}`);
       generateEntity(entity, compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
     }
-    generateCore(compiled, outputDir, { force, dryRun }, report, schemaOutputPaths);
+    generateCore(compiled, outputDir, { force, dryRun }, report, schemaOutputPaths, schemas);
     console.log(`\nSummary: ${report.written} written, ${report.skipped} skipped, ${report.planned} planned`);
   } catch (error) {
     console.error(`Error: ${error.message}`);

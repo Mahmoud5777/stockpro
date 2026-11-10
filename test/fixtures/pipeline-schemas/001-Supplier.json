@@ -1,0 +1,8 @@
+{
+  "entity": {
+    "name": "Supplier", "module": "crm", "tableName": "SUPPLIERS",
+    "idField": "supplierId", "idColumn": "SUPPLIER_ID", "idType": "Long", "urlPath": "suppliers",
+    "securityLevel": "high",
+    "fields": [{ "name": "title", "javaType": "String", "required": true, "errorMessage": "Title is required" }]
+  }
+}

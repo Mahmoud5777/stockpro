@@ -99,7 +99,8 @@ public class DataInitializer {
                 new FonctionnaliteSeed("ADMIN_ROLES", "Roles", 4),
                 new FonctionnaliteSeed("ADMIN_GROUPES", "Groupes", 5),
                 new FonctionnaliteSeed("ADMIN_FONCTIONNALITES", "Fonctions", 6),
-                new FonctionnaliteSeed("ADMIN_AUDIT", "Audit", 7));
+                new FonctionnaliteSeed("ADMIN_AUDIT", "Audit", 7){{#each entities}},
+                new FonctionnaliteSeed("{{this.permissionCode}}", "{{this.name}}", {{@index}} + 100){{/each}});
 
         return seeds.stream()
                 .map(s -> fonctionnaliteRepository.findByCodeFonc(s.code())

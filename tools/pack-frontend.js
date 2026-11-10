@@ -23,10 +23,12 @@
 const fs = require("fs");
 const path = require("path");
 const { writeZip } = require("../lib/zip");
+const { parseArgs } = require("../lib/args");
 
 function collectFiles(dir, rel = "") {
   const result = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (["node_modules", ".git", ".next", "dist", "build", "target", ".env", ".env.local"].includes(entry.name) || entry.isSymbolicLink()) continue;
     const relPath = rel ? `${rel}/${entry.name}` : entry.name;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -44,10 +46,7 @@ function main() {
     console.log("Usage: node tools/pack-frontend.js <templateDir> <out.spack> [--name <name>] [--framework next]");
     return;
   }
-  const positional = args.filter((a) => !a.startsWith("--"));
-  const nameArg = args.find((a) => a.startsWith("--name="));
-  const frameworkArg = args.find((a) => a.startsWith("--framework="));
-  const registryArg = args.find((a) => a.startsWith("--registry="));
+  const { positional, options } = parseArgs(args, ["name", "framework", "registry"]);
   const [templateDir, outFile] = positional;
   if (!templateDir || !outFile) {
     console.error("Error: <templateDir> and <out.spack> are required.");
@@ -69,8 +68,8 @@ function main() {
     normalizedFiles[rel] = fs.readFileSync(abs);
   }
 
-  if (registryArg) {
-    const registryPath = registryArg.split("=")[1];
+  if (options.registry) {
+    const registryPath = options.registry;
     if (!fs.existsSync(registryPath)) {
       console.error(`Error: registry template not found: ${registryPath}`);
       process.exit(1);
@@ -83,8 +82,8 @@ function main() {
 
   const pack = {
     ...manifest,
-    name: nameArg ? nameArg.split("=")[1] : manifest.name || path.basename(templateDir),
-    framework: frameworkArg ? frameworkArg.split("=")[1] : manifest.framework || "next",
+    name: options.name || manifest.name || path.basename(templateDir),
+    framework: options.framework || manifest.framework || "next",
     uiLibrary: manifest.uiLibrary || "tailwind",
     state: manifest.state || "zustand",
     templates,

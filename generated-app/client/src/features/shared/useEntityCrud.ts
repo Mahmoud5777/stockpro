@@ -1,14 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiCreate, apiList, apiRemove, apiUpdate } from "./api";
+import { apiCreate, apiList, apiRemove, apiUpdate, type ListOptions } from "./api";
 
-export function useEntityCrud(entity: { urlPath: string }) {
+export function useEntityCrud(entity: { urlPath: string }, options: ListOptions = {}) {
   const qc = useQueryClient();
 
   const list = useQuery({
-    queryKey: [entity.urlPath],
-    queryFn: () => apiList(entity.urlPath),
+    queryKey: [entity.urlPath, options],
+    queryFn: () => apiList(entity.urlPath, options),
   });
 
   const create = useMutation({

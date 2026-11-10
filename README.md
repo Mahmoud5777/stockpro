@@ -1,5 +1,9 @@
 # StockPro Generator
 
+Read [PIPELINE.md](PIPELINE.md) for the complete prototype → design pack → user model → backend/frontend pipeline, the extraction techniques, and current limitations. [IMPROVEMENTS.md](IMPROVEMENTS.md) records the implemented fixes and validation.
+
+The generated example uses `templates/frontend/packs/stockpro.spack`, extracted from the StockPro reference frontend. After editing the canonical UI under `templates/frontend/next/static`, run `npm run refresh:frontend` to synchronize the extraction scaffold and rebuild the default pack.
+
 A Node.js CLI and code-generation engine that produces a complete, runnable
 full-stack application from a JSON application model: a Spring Boot backend
 (Java 17 / Spring Boot 3.5.x) and a Next.js frontend (App Router). It is
@@ -35,6 +39,11 @@ npm install
 ```bash
 npm run wizard
 ```
+
+Use **Up/Down arrows** to highlight an option and **Enter** to confirm it.
+This also works for Yes/No questions. The default is highlighted initially;
+you can also type an option name or its number (starting at 1). **Ctrl+C** cancels.
+Text questions remain ordinary editable input.
 
 The wizard collects the complete application model (application info, features,
 security, and every entity with its fields and relations) and then:
@@ -198,9 +207,9 @@ a missing target aborts generation; otherwise it is reported as a warning.
 
 | Type    | Java type | Strategy                                            |
 | ------- | --------- | --------------------------------------------------- |
-| `UUID`  | `UUID`    | `@GeneratedValue`, `UUID.randomUUID()` in `@PrePersist`. |
-| `String`| `String`  | `@GeneratedValue(strategy = IDENTITY)`.              |
-| `Long`  | `Long`    | `@GeneratedValue(strategy = IDENTITY)`, `System.currentTimeMillis()` in `@PrePersist`. |
+| `UUID`  | `UUID`    | `UUID.randomUUID()` in `@PrePersist`. |
+| `String`| `String`  | UUID text assigned in `@PrePersist`. |
+| `Long`  | `Long`    | Database identity via `@GeneratedValue(strategy = IDENTITY)`. |
 
 The matching imports are emitted only when needed.
 
@@ -353,8 +362,36 @@ node tools/pack-frontend.js templates/frontend/next/static \
 After generation the wizard prints run instructions and writes launcher scripts
 into the output directory:
 
-* **`dev-run.ps1`** (Windows) and **`dev-run.sh`** (bash) — start the backend
-  and frontend dev servers in separate windows/background.
+* **`dev-run.cmd`** (Windows) invokes **`dev-run.ps1`** with an execution-policy
+  override for that process. It opens a separate window for each selected server.
+* **`dev-run.sh`** (bash) starts the selected servers in the background.
+
+From the generated output directory in PowerShell:
+
+```powershell
+.\dev-run.cmd
+# Skip dependency installation if it is already complete:
+.\dev-run.cmd -NoInstall
+# Check detected tool paths without installing dependencies or starting servers:
+.\dev-run.cmd -Check
+```
+
+You can also invoke the PowerShell script directly without changing your system policy:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\dev-run.ps1
+```
+
+On Windows, the launcher finds complete portable Node distributions under
+`.tools\node` or `.tools\node-*-win-*` in the app directory or a parent directory,
+then checks `NODE_HOME`, `PATH` and standard Node install locations. A standalone
+`node.exe` without npm is insufficient. Java/Maven discovery also supports
+`JAVA_HOME`, `JDK_HOME`, `MAVEN_HOME`, `M2_HOME`, project-local tools, IntelliJ JDKs
+under `%USERPROFILE%\.jdks` and Maven's wrapper cache under `%USERPROFILE%\.m2`.
+Selected tool paths apply only to the launcher and its child server windows.
+The launcher uses `npm.cmd` to avoid PowerShell blocking `npm.ps1`, checks
+dependencies before starting servers, and stops if `npm install` fails. The
+wizard's Windows "run now" action uses this same launcher.
 
 When run interactively, the wizard also asks **"Lancer l'application maintenant ?"**
 and, on yes, installs the frontend dependencies and launches both dev servers.

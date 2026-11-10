@@ -9,7 +9,8 @@
     "test": "node --test",
     "wizard": "node cli.js",
     "test-app": "node verify-app.js",
-    "pack:frontend": "node tools/pack-frontend.js"
+    "pack:frontend": "node tools/pack-frontend.js",
+    "refresh:frontend": "node tools/refresh-frontend.js"
   },
   "license": "ISC",
   "dependencies": {

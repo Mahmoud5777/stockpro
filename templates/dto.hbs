@@ -7,9 +7,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 {{/if}}
 import lombok.*;
+{{#if entity.needsBigDecimal}}
+import java.math.BigDecimal;
+{{/if}}
 
 {{#if entity.needsLocalDate}}
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 {{/if}}
 {{#if entity.needsUuidImport}}
 import java.util.UUID;

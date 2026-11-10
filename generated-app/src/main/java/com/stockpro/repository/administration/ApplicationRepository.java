@@ -15,4 +15,42 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     Page<Application> findByNomAppContainingIgnoreCaseOrCodeAppContainingIgnoreCase(
             String nomApp, String codeApp, Pageable pageable);
-}
+}               
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

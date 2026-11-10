@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "module": "administration",
+    "name": "User",
+    "tableName": "USER",
+    "idField": "id",
+    "idFieldCap": "Id",
+    "idColumn": "USER_ID",
+    "idType": "UUID",
+    "repoVar": "userRepository",
+    "serviceVar": "userService",
+    "urlPath": "users",
+    "tagLabel": "Users",
+    "tagLabelLower": "users",
+    "permissionCode": "ADMIN_USER",
+    "filterKey": "USER",
+    "defaultSortField": "id",
+    "securityLevel": "medium",
+    "serviceDescription": "User management",
+    "features": {
+      "pagination": true,
+      "search": true,
+      "filtering": true,
+      "export": true,
+      "security": true,
+      "validation": false
+    },
+    "fields": [],
+    "updatableFields": [],
+    "manyToOne": [],
+    "oneToMany": [],
+    "relationIds": [],
+    "customFinders": [],
+    "exportColumns": []
+  }
+}
