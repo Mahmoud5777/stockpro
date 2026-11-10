@@ -5,3 +5,4 @@ target/
 artifacts/
 node_modules/
 generated-app/client/node_modules/
+generated-app/client/node_modules/
